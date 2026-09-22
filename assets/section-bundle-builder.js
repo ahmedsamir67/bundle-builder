@@ -725,6 +725,71 @@ if (!customElements.get('bundle-review-panel')) {
       }
     };
 
+    #onCheckout = async (event) => {
+      event.preventDefault();
+      const checkoutBtn = event.currentTarget;
+      if (checkoutBtn.disabled) return;
+
+      const state = this.#builder?.getState();
+      const config = this.#builder?.getConfig();
+      if (!state || !config) return;
+
+      const lines = [];
+      for (const step of config.steps ?? []) {
+        const stepElement = this.#builder.querySelector(`bundle-step[data-block-id="${step.blockId}"]`);
+        if (!stepElement) continue;
+        lines.push(...this.#getLines(stepElement, state));
+      }
+
+      const activeLines = lines.filter((line) => line.quantity > 0 && line.variantId);
+      if (activeLines.length === 0) return;
+
+      const originalText = checkoutBtn.textContent;
+      checkoutBtn.disabled = true;
+      checkoutBtn.textContent = 'Processing...';
+
+      const root = window.Shopify?.routes?.root || '/';
+
+      try {
+        if (window.Cart?.add) {
+          const formData = new FormData();
+          activeLines.forEach((line, index) => {
+            formData.append(`items[${index}][id]`, line.variantId);
+            formData.append(`items[${index}][quantity]`, line.quantity);
+          });
+          await window.Cart.add(formData, checkoutBtn);
+        } else {
+          const items = activeLines.map((line) => ({
+            id: line.variantId,
+            quantity: line.quantity,
+          }));
+          const response = await fetch(`${root}cart/add.js`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({ items }),
+          });
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.description || errorData.message || 'Failed to add bundle to cart');
+          }
+        }
+
+        window.location.href = `${root}checkout`;
+      } catch (error) {
+        console.error('[bundle-builder] Checkout error:', error);
+        checkoutBtn.disabled = false;
+        checkoutBtn.textContent = originalText;
+
+        const status = this.querySelector('.bb-review__save-status');
+        if (status) {
+          status.textContent = error.description || error.message || 'Error proceeding to checkout. Please try again.';
+        }
+      }
+    };
+
     #render(state = this.#builder?.getState()) {
       const groupsContainer = this.querySelector('.bb-review__groups');
       const config = this.#builder?.getConfig();
@@ -753,6 +818,13 @@ if (!customElements.get('bundle-review-panel')) {
         stepper.addEventListener('bb:quantity-change', this.#onReviewQuantityChange);
       });
       groupsContainer.querySelector('.bb-review__save')?.addEventListener('click', this.#onSaveForLater);
+
+      const checkoutBtn = groupsContainer.querySelector('.bb-review__checkout');
+      if (checkoutBtn) {
+        const totalItems = groups.flatMap((group) => group.lines).reduce((sum, line) => sum + line.quantity, 0);
+        checkoutBtn.disabled = totalItems === 0;
+        checkoutBtn.addEventListener('click', this.#onCheckout);
+      }
     }
 
     #getLines(stepElement, state) {
@@ -764,8 +836,9 @@ if (!customElements.get('bundle-review-panel')) {
         const options = card.querySelectorAll('.bb-variant-selector__option');
         const variants = options.length ? Array.from(options) : [null];
         for (const option of variants) {
-          const variantId = option?.dataset.variantId ?? 'default';
-          const quantity = selection.quantitiesByVariant[variantId] ?? 0;
+          const key = option?.dataset.variantId ?? 'default';
+          const variantId = option?.dataset.variantId || card.dataset.defaultVariantId;
+          const quantity = selection.quantitiesByVariant[key] ?? 0;
           if (quantity <= 0) continue;
           lines.push({
             productId: card.dataset.productId,

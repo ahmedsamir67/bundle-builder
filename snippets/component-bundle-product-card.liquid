@@ -20,7 +20,7 @@
   data-product-image="{% if product.featured_media != blank %}{{ product.featured_media | image_url: width: 120 }}{% endif %}"
   data-price-cents="{{ selected_variant.price }}"
   data-compare-at-price-cents="{{ selected_variant.compare_at_price | default: selected_variant.price }}"
-  data-default-variant-id="{% if has_variants %}{{ selected_variant.id }}{% endif %}"
+  data-default-variant-id="{{ selected_variant.id }}"
   data-has-variants="{{ has_variants }}"
 >
   <article class="bb-product-card__article">
