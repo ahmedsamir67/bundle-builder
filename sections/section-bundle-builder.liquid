@@ -1,0 +1,386 @@
+{% comment %}
+  Section: Bundle Builder
+  File: sections/section-bundle-builder.liquid
+
+  A two-column bundle configurator: multi-step accordion (left) + live review
+  panel (right). Steps are merchant-configured blocks; product cards are
+  Liquid-pre-rendered from live Shopify collections and progressively enhanced
+  by native Web Components. No framework, no bundler.
+
+  Companion assets:
+    assets/section-bundle-builder.css
+    assets/section-bundle-builder.js
+{% endcomment %}
+
+{% style %}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+{{ 'section-bundle-builder.css' | asset_url | stylesheet_tag }}
+
+<div class="color-{{ section.settings.color_scheme }} section-bundle-builder section-{{ section.id }}-padding">
+
+  {%- comment -%}
+    Typed data bridge: Liquid → JS.
+    The custom element reads this block once in connectedCallback.
+    All translatable strings are resolved here, not in JS.
+  {%- endcomment -%}
+  <bundle-builder
+    class="bb-layout"
+    data-section-id="{{ section.id }}"
+    data-review-title="{{ section.settings.review_title | escape }}"
+    data-review-subtitle="{{ section.settings.review_subtitle | escape }}"
+    data-checkout-label="{{ section.settings.checkout_label | escape }}"
+    data-save-label="{{ section.settings.save_label | escape }}"
+    data-financing-text="{{ section.settings.financing_text | escape }}"
+    data-guarantee-text="{{ section.settings.guarantee_text | escape }}"
+  >
+    {%- comment -%} JSON config block — single typed boundary for all step metadata {%- endcomment -%}
+    <script type="application/json" data-bundle-config>
+      {
+        "steps": [
+          {%- for block in section.blocks -%}
+            {%- if block.type == 'step' -%}
+              {%- assign step_number = forloop.index -%}
+              {%- assign total_steps = section.blocks.size -%}
+              {%- assign step_label = 'sections.bundle_builder.step_of' | t: step: step_number, total: total_steps -%}
+              {
+                "blockId": "{{ block.id }}",
+                "index": {{ forloop.index0 }},
+                "heading": {{ block.settings.heading | json }},
+                "reviewSubheading": {{ block.settings.review_subheading | json }},
+                "collectionHandle": {{ block.settings.collection.handle | json }},
+                "openByDefault": {{ block.settings.open_by_default }},
+                "nextButtonLabel": {{ block.settings.next_button_label | json }},
+                "stepLabel": {{ step_label | json }},
+                "iconUrl": {% if block.settings.icon != blank %}{{ block.settings.icon | image_url: width: 52 | json }}{% else %}null{% endif %}
+              }{% unless forloop.last %},{% endunless %}
+            {%- endif -%}
+          {%- endfor -%}
+        ],
+        "settings": {
+          "reviewTitle": {{ section.settings.review_title | json }},
+          "reviewSubtitle": {{ section.settings.review_subtitle | json }},
+          "guaranteeText": {{ section.settings.guarantee_text | json }},
+          "financingText": {{ section.settings.financing_text | json }},
+          "checkoutLabel": {{ section.settings.checkout_label | json }},
+          "saveLabel": {{ section.settings.save_label | json }},
+          "selectedLabel": {{ 'sections.bundle_builder.selected' | t | json }},
+          "decreaseQtyLabel": {{ 'sections.bundle_builder.decrease_quantity' | t | json }},
+          "increaseQtyLabel": {{ 'sections.bundle_builder.increase_quantity' | t | json }},
+          "quantityLabel": {{ 'sections.bundle_builder.quantity_label' | t | json }},
+          "shippingLabel": {{ 'sections.bundle_builder.shipping_label' | t | json }},
+          "shippingOriginalPrice": {{ 'sections.bundle_builder.shipping_original_price' | t | json }},
+          "freeLabel": {{ 'sections.bundle_builder.free' | t | json }},
+          "savingsTemplate": {{ 'sections.bundle_builder.savings_html' | t | json }},
+          "financingTemplate": {{ 'sections.bundle_builder.financing_label' | t | json }},
+          "savedLabel": {{ 'sections.bundle_builder.saved_label' | t | json }},
+          "shippingIconUrl": {{ 'bundle-fast-shipping.svg' | asset_url | json }},
+          "guaranteeBadgeUrl": {{ 'bundle-satisfaction-badge.png' | asset_url | json }},
+          "currencyCode": {{ shop.currency.iso_code | json }}
+        }
+      }
+    </script>
+
+    {%- comment -%} Left column: accordion steps {%- endcomment -%}
+    <section class="bb-layout__steps" aria-label="{{ 'sections.bundle_builder.builder_label' | t }}">
+      {%- for block in section.blocks -%}
+        {%- if block.type == 'step' -%}
+          {%- assign step_number = forloop.index -%}
+          {%- assign total_steps = section.blocks.size -%}
+
+          <bundle-step
+            class="bb-step"
+            data-block-id="{{ block.id }}"
+            data-step-index="{{ forloop.index0 }}"
+            data-step-number="{{ step_number }}"
+            data-step-count="{{ total_steps }}"
+            data-open-default="{{ block.settings.open_by_default }}"
+            {{ block.shopify_attributes }}
+          >
+            {%- comment -%}
+              Static shell — JS progressively enhances this into an interactive
+              accordion panel. The heading and step label are server-rendered so
+              the page is usable even if JS is slow or blocked.
+            {%- endcomment -%}
+            <p class="bb-step__label" aria-hidden="true">
+              {{- 'sections.bundle_builder.step_of' | t: step: step_number, total: total_steps -}}
+            </p>
+
+            <div class="bb-step__header-wrap">
+              <button
+                type="button"
+                class="bb-step__header"
+                aria-expanded="false"
+                aria-controls="bb-step-content-{{ block.id }}"
+              >
+                <span class="bb-step__header-left">
+                  {%- if block.settings.icon != blank -%}
+                    <img
+                      src="{{ block.settings.icon | image_url: width: 52 }}"
+                      alt=""
+                      aria-hidden="true"
+                      class="bb-step__icon"
+                      width="26"
+                      height="26"
+                      loading="lazy"
+                    >
+                  {%- endif -%}
+                  <h2 class="bb-step__heading">{{ block.settings.heading | escape }}</h2>
+                </span>
+
+                <span class="bb-step__header-right">
+                  <span class="bb-step__count" aria-live="polite" aria-atomic="true">
+                    {{- 'sections.bundle_builder.selected' | t: count: 0 -}}
+                  </span>
+                  <svg
+                    class="bb-step__chevron"
+                    viewBox="0 0 10 7"
+                    width="10"
+                    height="7"
+                    fill="none"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path d="M5 0L9.33 6.75H0.67L5 0Z" fill="currentColor"/>
+                  </svg>
+                </span>
+              </button>
+            </div>
+
+            <div
+              id="bb-step-content-{{ block.id }}"
+              class="bb-step__content"
+              hidden
+            >
+              {%- comment -%}
+                Product grid: Liquid pre-renders cards here in Phase 2.
+                Phase 1 ships this as an empty shell so the accordion
+                open/close works end-to-end before products are wired.
+              {%- endcomment -%}
+              <div class="bb-step__products" data-collection="{{ block.settings.collection.handle | escape }}">
+                {%- if block.settings.collection != blank -%}
+                  {%- for product in block.settings.collection.products -%}
+                    {% render 'component-bundle-product-card', product: product %}
+                  {%- endfor -%}
+                {%- endif -%}
+              </div>
+
+              <div class="bb-step__footer">
+                <button type="button" class="bb-step__next" data-step-index="{{ forloop.index0 }}">
+                  {{- block.settings.next_button_label | escape -}}
+                </button>
+              </div>
+            </div>
+          </bundle-step>
+        {%- endif -%}
+      {%- endfor -%}
+    </section>
+
+    {%- comment -%} Right column: live bundle review panel {%- endcomment -%}
+    <aside class="bb-layout__review" aria-label="{{ 'sections.bundle_builder.review_label' | t }}">
+      <bundle-review-panel class="bb-review">
+        <p class="bb-review__eyebrow">{{ 'sections.bundle_builder.review_eyebrow' | t }}</p>
+        <div class="bb-review__body">
+          <div class="bb-review__header">
+            <h2 class="bb-review__title">{{ section.settings.review_title | escape }}</h2>
+            <p class="bb-review__subtitle">{{ section.settings.review_subtitle | escape }}</p>
+          </div>
+          <div class="bb-review__groups" aria-live="polite"></div>
+        </div>
+      </bundle-review-panel>
+    </aside>
+
+  </bundle-builder>
+</div>
+
+<script src="{{ 'section-bundle-builder.js' | asset_url }}" type="module"></script>
+
+{% schema %}
+{
+  "name": "t:sections.bundle_builder.name",
+  "tag": "div",
+  "class": "bundle-builder-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "t:sections.bundle_builder.settings.review_panel_heading"
+    },
+    {
+      "type": "text",
+      "id": "review_title",
+      "label": "t:sections.bundle_builder.settings.review_title.label",
+      "default": "Your security system"
+    },
+    {
+      "type": "textarea",
+      "id": "review_subtitle",
+      "label": "t:sections.bundle_builder.settings.review_subtitle.label",
+      "default": "Review your personalized protection system designed to keep what matters most safe."
+    },
+    {
+      "type": "header",
+      "content": "t:sections.bundle_builder.settings.cta_heading"
+    },
+    {
+      "type": "text",
+      "id": "checkout_label",
+      "label": "t:sections.bundle_builder.settings.checkout_label.label",
+      "default": "Checkout"
+    },
+    {
+      "type": "text",
+      "id": "save_label",
+      "label": "t:sections.bundle_builder.settings.save_label.label",
+      "default": "Save my system for later"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.bundle_builder.settings.summary_heading"
+    },
+    {
+      "type": "text",
+      "id": "guarantee_text",
+      "label": "t:sections.bundle_builder.settings.guarantee_text.label",
+      "default": "30-day hassle-free returns"
+    },
+    {
+      "type": "text",
+      "id": "financing_text",
+      "label": "t:sections.bundle_builder.settings.financing_text.label",
+      "default": "as low as {price}/mo",
+      "info": "t:sections.bundle_builder.settings.financing_text.info"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.all.colors.label"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:sections.all.colors.label",
+      "default": "scheme-1"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.all.padding.section_padding_heading"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_top",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_bottom",
+      "default": 0
+    }
+  ],
+  "blocks": [
+    {
+      "type": "step",
+      "name": "t:sections.bundle_builder.blocks.step.name",
+      "settings": [
+        {
+          "type": "text",
+          "id": "heading",
+          "label": "t:sections.bundle_builder.blocks.step.heading.label",
+          "default": "Choose your products"
+        },
+        {
+          "type": "text",
+          "id": "review_subheading",
+          "label": "t:sections.bundle_builder.blocks.step.review_subheading.label",
+          "default": "Products",
+          "info": "t:sections.bundle_builder.blocks.step.review_subheading.info"
+        },
+        {
+          "type": "image_picker",
+          "id": "icon",
+          "label": "t:sections.bundle_builder.blocks.step.icon.label",
+          "info": "t:sections.bundle_builder.blocks.step.icon.info"
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "t:sections.bundle_builder.blocks.step.collection.label"
+        },
+        {
+          "type": "checkbox",
+          "id": "open_by_default",
+          "label": "t:sections.bundle_builder.blocks.step.open_by_default.label",
+          "default": false,
+          "info": "t:sections.bundle_builder.blocks.step.open_by_default.info"
+        },
+        {
+          "type": "text",
+          "id": "next_button_label",
+          "label": "t:sections.bundle_builder.blocks.step.next_button_label.label",
+          "default": "Next step"
+        }
+      ]
+    }
+  ],
+  "max_blocks": 10,
+  "presets": [
+    {
+      "name": "t:sections.bundle_builder.name",
+      "blocks": [
+        {
+          "type": "step",
+          "settings": {
+            "heading": "Choose your camera",
+            "review_subheading": "Cameras",
+            "open_by_default": true,
+            "next_button_label": "Next: Sensors"
+          }
+        },
+        {
+          "type": "step",
+          "settings": {
+            "heading": "Add sensors",
+            "review_subheading": "Sensors",
+            "next_button_label": "Next: Accessories"
+          }
+        },
+        {
+          "type": "step",
+          "settings": {
+            "heading": "Accessories",
+            "review_subheading": "Accessories",
+            "next_button_label": "Next: Plan"
+          }
+        },
+        {
+          "type": "step",
+          "settings": {
+            "heading": "Choose a plan",
+            "review_subheading": "Plan",
+            "next_button_label": "Review your system"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

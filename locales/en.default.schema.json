@@ -73,6 +73,65 @@
         "padding_bottom": "Bottom padding"
       }
     },
+    "bundle_builder": {
+      "name": "Bundle Builder",
+      "settings": {
+        "review_panel_heading": {
+          "content": "Review panel"
+        },
+        "review_title": {
+          "label": "Panel title"
+        },
+        "review_subtitle": {
+          "label": "Panel subtitle"
+        },
+        "cta_heading": {
+          "content": "Calls to action"
+        },
+        "checkout_label": {
+          "label": "Checkout button label"
+        },
+        "save_label": {
+          "label": "Save for later link label"
+        },
+        "summary_heading": {
+          "content": "Summary row"
+        },
+        "guarantee_text": {
+          "label": "Guarantee text"
+        },
+        "financing_text": {
+          "label": "Financing text",
+          "info": "Use {price} as a placeholder for the calculated monthly price"
+        }
+      },
+      "blocks": {
+        "step": {
+          "name": "Builder step",
+          "heading": {
+            "label": "Step heading"
+          },
+          "review_subheading": {
+            "label": "Review panel subheading",
+            "info": "Appears as the category label in the review panel. Should match the step's product type (e.g. Cameras, Sensors)."
+          },
+          "icon": {
+            "label": "Step icon",
+            "info": "Recommended size: 52\u00d752px. PNG or SVG with a transparent background."
+          },
+          "collection": {
+            "label": "Product collection"
+          },
+          "open_by_default": {
+            "label": "Open by default",
+            "info": "If more than one step has this enabled, the first one wins."
+          },
+          "next_button_label": {
+            "label": "\"Next\" button label"
+          }
+        }
+      }
+    },
     "header": {
       "name": "Header",
       "settings": {

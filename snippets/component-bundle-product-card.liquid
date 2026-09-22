@@ -1,0 +1,121 @@
+{% doc %}
+  Bundle Builder product card with optional variant selection and quantity controls.
+
+  @param {product} product - Product object from the configured collection
+{% enddoc %}
+
+{%- liquid
+  assign selected_variant = product.selected_or_first_available_variant
+  assign badge = product.metafields.custom.badge.value
+  assign has_variants = false
+  if product.variants.size > 1
+    assign has_variants = true
+  endif
+-%}
+
+<bundle-product-card
+  class="bb-product-card"
+  data-product-id="{{ product.id }}"
+  data-product-title="{{ product.title | escape }}"
+  data-product-image="{% if product.featured_media != blank %}{{ product.featured_media | image_url: width: 120 }}{% endif %}"
+  data-price-cents="{{ selected_variant.price }}"
+  data-compare-at-price-cents="{{ selected_variant.compare_at_price | default: selected_variant.price }}"
+  data-default-variant-id="{% if has_variants %}{{ selected_variant.id }}{% endif %}"
+  data-has-variants="{{ has_variants }}"
+>
+  <article class="bb-product-card__article">
+    <div class="bb-product-card__media">
+      {% if product.featured_media != blank %}
+        <img
+          src="{{ product.featured_media | image_url: width: 600 }}"
+          alt="{{ product.featured_media.alt | default: product.title | escape }}"
+          width="600"
+          height="{{ 600 | divided_by: product.featured_media.aspect_ratio | round }}"
+          loading="lazy"
+          class="bb-product-card__image"
+        >
+      {% endif %}
+      {% if badge != blank %}
+        <span class="bb-product-card__badge">{{ badge | escape }}</span>
+      {% endif %}
+    </div>
+
+    <div class="bb-product-card__details">
+      <div class="bb-product-card__copy">
+        <h3 class="bb-product-card__title">{{ product.title | escape }}</h3>
+        {% if product.description != blank %}
+          <p class="bb-product-card__description">
+            {{ product.description | strip_html | truncate: 150 | escape }}
+          </p>
+        {% endif %}
+      </div>
+
+      {% if has_variants %}
+        <bundle-variant-selector
+          class="bb-variant-selector"
+          data-product-id="{{ product.id }}"
+          role="group"
+          aria-label="{{ 'sections.bundle_builder.variant_options' | t: product: product.title }}"
+        >
+          {% for variant in product.variants %}
+            <button
+              type="button"
+              class="bb-variant-selector__option"
+              data-variant-id="{{ variant.id }}"
+              data-variant-title="{{ variant.title | escape }}"
+              data-variant-image="{% if variant.featured_media != blank %}{{ variant.featured_media | image_url: width: 120 }}{% elsif product.featured_media != blank %}{{ product.featured_media | image_url: width: 120 }}{% endif %}"
+              data-price-cents="{{ variant.price }}"
+              data-compare-at-price-cents="{{ variant.compare_at_price | default: variant.price }}"
+              data-available="{{ variant.available }}"
+              data-price="{{ variant.price | money }}"
+              data-compare-at-price="{% if variant.compare_at_price > variant.price %}{{ variant.compare_at_price | money }}{% endif %}"
+              aria-pressed="{% if variant.id == selected_variant.id %}true{% else %}false{% endif %}"
+              {% if variant.available == false %}disabled{% endif %}
+            >
+              {% if variant.featured_media != blank %}
+                <img
+                  src="{{ variant.featured_media | image_url: width: 48 }}"
+                  alt=""
+                  aria-hidden="true"
+                  width="20"
+                  height="20"
+                  loading="lazy"
+                  class="bb-variant-selector__image"
+                >
+              {% endif %}
+              <span>{{ variant.title | escape }}</span>
+            </button>
+          {% endfor %}
+        </bundle-variant-selector>
+      {% endif %}
+
+      <div class="bb-product-card__footer">
+        <bundle-quantity-stepper
+          class="bb-quantity-stepper"
+          data-product-id="{{ product.id }}"
+          data-quantity-label="{{ 'sections.bundle_builder.quantity_label' | t: count: 0 }}"
+          data-decrease-label="{{ 'sections.bundle_builder.decrease_quantity' | t }}"
+          data-increase-label="{{ 'sections.bundle_builder.increase_quantity' | t }}"
+          data-available="{{ selected_variant.available }}"
+          role="group"
+          aria-label="{{ 'sections.bundle_builder.quantity_label' | t: count: 0 }}"
+        >
+          <button type="button" class="bb-quantity-stepper__button bb-quantity-stepper__button--decrease">
+            <svg viewBox="0 0 8 2" aria-hidden="true" focusable="false"><path d="M0 1H8"/></svg>
+          </button>
+          <output class="bb-quantity-stepper__value" aria-live="polite">0</output>
+          <button type="button" class="bb-quantity-stepper__button bb-quantity-stepper__button--increase">
+            <svg viewBox="0 0 8 8" aria-hidden="true" focusable="false"><path d="M4 0V8M0 4H8"/></svg>
+          </button>
+        </bundle-quantity-stepper>
+
+        <div class="bb-product-card__price" aria-live="polite">
+          {% if selected_variant.compare_at_price > selected_variant.price %}
+            <s class="bb-product-card__compare-price">{{ selected_variant.compare_at_price | money }}</s>
+          {% endif %}
+          <span class="bb-product-card__current-price">{{ selected_variant.price | money }}</span>
+        </div>
+      </div>
+    </div>
+  </article>
+</bundle-product-card>

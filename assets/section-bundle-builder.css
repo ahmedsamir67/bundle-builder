@@ -1,0 +1,875 @@
+/*
+ * section-bundle-builder.css
+ *
+ * Styles for the Bundle Builder section.
+ * Design tokens match the reference project (D:/Projects/Bundle-Builder) exactly.
+ * All class names are prefixed `bb-` to avoid collisions with the base theme.
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   1. Section-scoped design tokens
+   Values sourced from D:/Projects/Bundle-Builder/src/styles/global.css
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.section-bundle-builder {
+  /* Typography */
+  font-family: 'Manrope', system-ui, sans-serif;
+
+  /* Color tokens (RGB triplets for alpha-compositing) */
+  --bb-ink: 11 13 16;           /* #0B0D10 near-black */
+  --bb-graphite: 31 31 31;      /* #1F1F1F product titles / copy */
+  --bb-muted: 111 120 130;      /* #6F7882 secondary text */
+  --bb-subtle: 168 178 189;     /* #A8B2BD faint labels */
+  --bb-panel: 255 255 255;      /* #FFFFFF card surface */
+  --bb-panel-alt: 237 244 255;  /* #EDF4FF light-blue panel */
+  --bb-line: 206 214 222;       /* #CED6DE dividers */
+  --bb-line-soft: 230 235 240;  /* #E6EBF0 hairlines */
+  --bb-surface: 240 244 247;    /* #F0F4F7 controls */
+  --bb-accent: 78 47 210;       /* #4E2FD2 purple */
+  --bb-success: 10 162 136;     /* #0AA288 */
+  --bb-danger: 216 57 43;       /* #D8392B strike price */
+
+  /* Resolved shorthand tokens used throughout */
+  --bb-c-ink: rgb(var(--bb-ink));
+  --bb-c-graphite: rgb(var(--bb-graphite));
+  --bb-c-muted: rgb(var(--bb-muted));
+  --bb-c-subtle: rgb(var(--bb-subtle));
+  --bb-c-panel: rgb(var(--bb-panel));
+  --bb-c-panel-alt: rgb(var(--bb-panel-alt));
+  --bb-c-line: rgb(var(--bb-line));
+  --bb-c-line-soft: rgb(var(--bb-line-soft));
+  --bb-c-surface: rgb(var(--bb-surface));
+  --bb-c-accent: rgb(var(--bb-accent));
+  --bb-c-success: rgb(var(--bb-success));
+  --bb-c-danger: rgb(var(--bb-danger));
+
+  color: var(--bb-c-ink);
+  background-color: var(--bb-c-panel);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   2. Two-column layout
+   Single column on mobile/tablet; side-by-side at 1280px+.
+   Review panel is sticky in the desktop column (applied via JS-managed class).
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.bb-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "steps"
+    "review";
+  gap: 0;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+
+@media screen and (min-width: 768px) {
+  .bb-layout {
+    padding-inline: 24px;
+    gap: 30px;
+  }
+}
+
+@media screen and (min-width: 1280px) {
+  .bb-layout {
+    grid-template-columns: minmax(0, 1fr) 399px;
+    grid-template-areas: "steps review";
+    align-items: start;
+    padding-inline: 32px;
+    gap: 40px;
+  }
+}
+
+.bb-layout__steps {
+  grid-area: steps;
+  /* Full-bleed on mobile so dividers reach screen edges (matches reference). */
+  margin-inline: -16px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+@media screen and (min-width: 768px) {
+  .bb-layout__steps {
+    margin-inline: 0;
+  }
+}
+
+.bb-layout__review {
+  grid-area: review;
+  margin-inline: -16px;
+}
+
+@media screen and (min-width: 768px) {
+  .bb-layout__review {
+    margin-inline: 0;
+  }
+}
+
+@media screen and (min-width: 1280px) {
+  .bb-layout__review {
+    position: sticky;
+    top: 32px;
+    align-self: start;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   3. Step element — closed state
+   Matches reference: full-bleed border-y divider, left-padded step label,
+   header text flush left.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+bundle-step.bb-step {
+  display: block;
+}
+
+.bb-step {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* "STEP X OF N" label */
+.bb-step__label {
+  margin: 0;
+  padding-inline: 15px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: #484848;
+}
+
+/* The wrapper div carries the border in the closed state */
+.bb-step__header-wrap {
+  border-top: 0.5px solid var(--bb-c-graphite);
+  border-bottom: 0.5px solid var(--bb-c-graphite);
+  padding: 20px 15px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   4. Step element — open state
+   Card with panel-alt background on desktop, full-bleed on mobile.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.bb-step--open {
+  gap: 0;
+  padding-top: 15px;
+}
+
+@media screen and (min-width: 768px) {
+  .bb-step--open {
+    background-color: var(--bb-c-panel-alt);
+    border-radius: 10px;
+  }
+}
+
+.bb-step--open .bb-step__label {
+  font-size: 12px;
+}
+
+.bb-step--open .bb-step__header-wrap {
+  border-top: 0.5px solid var(--bb-c-graphite);
+  border-bottom: none;
+  padding: 20px 15px 0;
+  /* Reconnect into the content block visually */
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   5. Accordion header button
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.bb-step__header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 3px;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.bb-step__header-left {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.bb-step__icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+@media screen and (min-width: 768px) {
+  .bb-step__icon {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+.bb-step__heading {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--bb-c-ink);
+}
+
+@media screen and (min-width: 768px) {
+  .bb-step__heading {
+    font-size: 22px;
+  }
+}
+
+.bb-step__header-right {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  color: var(--bb-c-accent);
+}
+
+/* Selected count badge */
+.bb-step__count {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+/* Hide count on desktop when step is closed (matches reference: mobile-only when collapsed) */
+@media screen and (min-width: 768px) {
+  .bb-step:not(.bb-step--open) .bb-step__count {
+    display: none;
+  }
+
+  .bb-step:not(.bb-step--open) .bb-step__header-right {
+    color: var(--bb-c-ink);
+  }
+}
+
+/* Chevron — points UP (open), flips DOWN (closed) via CSS transform */
+.bb-step__chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+/* Closed: chevron points down (triangle apex down = rotate 180) */
+.bb-step__header[aria-expanded="false"] .bb-step__chevron {
+  transform: rotate(180deg);
+}
+
+/* Open: chevron points up */
+.bb-step__header[aria-expanded="true"] .bb-step__chevron {
+  transform: rotate(0deg);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   6. Step content panel
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.bb-step__content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px 15px;
+  border-top: 0.5px solid var(--bb-c-graphite);
+}
+
+/* hidden attribute hides the content panel; JS removes it on open */
+.bb-step__content[hidden] {
+  display: none;
+}
+
+.bb-step__products {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 15px;
+}
+
+.bb-product-card {
+  display: block;
+  min-width: 0;
+}
+
+.bb-product-card__article {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: 19px;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 11px;
+  background-color: var(--bb-c-panel);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  transition: border-color 0.15s ease;
+}
+
+.bb-product-card[data-selected="true"] .bb-product-card__article {
+  border-color: rgb(var(--bb-success) / 0.7);
+}
+
+.bb-product-card__media {
+  position: relative;
+  display: flex;
+  width: 100%;
+  aspect-ratio: 214 / 124;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--bb-c-panel);
+  border-radius: 5px;
+}
+
+.bb-product-card__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.bb-product-card__badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 2px 6px;
+  color: var(--bb-c-panel);
+  background-color: var(--bb-c-accent);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bb-product-card__details {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bb-product-card__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bb-product-card__title,
+.bb-product-card__description {
+  margin: 0;
+  color: var(--bb-c-graphite);
+}
+
+.bb-product-card__title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.1px;
+}
+
+.bb-product-card__description {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.4px;
+  opacity: 0.75;
+}
+
+.bb-variant-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.bb-variant-selector__option {
+  display: inline-flex;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding-inline: 4px;
+  color: var(--bb-c-graphite);
+  background-color: var(--bb-c-panel);
+  border: 0.5px solid var(--bb-c-line);
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.bb-variant-selector__option[aria-pressed="true"] {
+  background-color: rgb(var(--bb-success) / 0.06);
+  border-color: var(--bb-c-success);
+}
+
+.bb-variant-selector__option:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.bb-variant-selector__image {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 5px;
+  object-fit: contain;
+}
+
+.bb-product-card__footer {
+  display: flex;
+  width: 100%;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bb-quantity-stepper {
+  display: inline-flex;
+  min-width: 80px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-block: 4px;
+  color: var(--bb-c-ink);
+}
+
+.bb-quantity-stepper__button {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  padding: 0;
+  color: currentColor;
+  background-color: var(--bb-c-surface);
+  border: 2px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.bb-quantity-stepper__button svg {
+  width: 8px;
+  height: 8px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+.bb-quantity-stepper__button--decrease:not(:disabled) {
+  background-color: var(--bb-c-panel);
+  border-color: var(--bb-c-line-soft);
+}
+
+.bb-quantity-stepper__button:disabled {
+  color: var(--bb-c-line);
+  cursor: not-allowed;
+}
+
+.bb-quantity-stepper__value {
+  min-width: 16px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bb-product-card__price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  color: var(--bb-c-graphite);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.bb-product-card__compare-price {
+  color: var(--bb-c-danger);
+}
+
+.bb-product-card__current-price {
+  color: var(--bb-c-muted);
+}
+
+.bb-variant-selector__option:focus-visible,
+.bb-quantity-stepper__button:focus-visible,
+.bb-step__header:focus-visible,
+.bb-step__next:focus-visible {
+  outline: 2px solid var(--bb-c-accent);
+  outline-offset: 2px;
+}
+
+@media screen and (min-width: 1280px) {
+  .bb-product-card__article {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+    padding: 11px;
+  }
+
+  .bb-product-card__media {
+    width: 101px;
+    height: 137px;
+    flex-shrink: 0;
+    aspect-ratio: auto;
+  }
+
+  .bb-product-card__title {
+    font-size: 16px;
+  }
+
+  .bb-product-card__description {
+    font-size: 12px;
+  }
+}
+
+@media screen and (min-width: 1280px) {
+  .bb-step__products {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   7. "Next:" footer button
+   Outlined accent, matches reference exactly.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+.bb-step__footer {
+  display: flex;
+  justify-content: center;
+}
+
+.bb-step__next {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 39px;
+  padding-inline: 24px;
+  padding-block: 5px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--bb-c-accent);
+  background: none;
+  border: 1px solid var(--bb-c-accent);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.bb-step__next:hover {
+  background-color: var(--bb-c-accent);
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   8. Review panel shell (Phase 3 will complete the interior)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+bundle-review-panel.bb-review {
+  display: block;
+}
+
+.bb-review {
+  display: block;
+  background-color: var(--bb-c-panel-alt);
+  padding-top: 15px;
+}
+
+@media screen and (min-width: 768px) {
+  .bb-review {
+    border-radius: 10px;
+  }
+}
+
+.bb-review__eyebrow {
+  margin: 0;
+  padding-inline: 15px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: #484848;
+}
+
+.bb-review__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 20px 31px;
+}
+
+.bb-review__header {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bb-review__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.6px;
+  color: var(--bb-c-graphite);
+}
+
+.bb-review__subtitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.6px;
+  color: rgba(var(--bb-graphite) / 0.75);
+}
+
+.bb-review__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bb-review__group,
+.bb-review__shipping,
+.bb-review__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--bb-c-line);
+  padding-top: 15px;
+}
+
+.bb-review__group-title {
+  margin: 0;
+  color: var(--bb-c-subtle);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.36px;
+  text-transform: uppercase;
+}
+
+.bb-review__items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bb-review__line,
+.bb-review__shipping,
+.bb-review__summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.bb-review__line-main,
+.bb-review__shipping-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+}
+
+.bb-review__thumbnail,
+.bb-review__shipping-icon {
+  display: grid;
+  width: 41px;
+  height: 41px;
+  flex-shrink: 0;
+  place-items: center;
+  overflow: hidden;
+  background-color: var(--bb-c-panel);
+  border-radius: 5px;
+}
+
+.bb-review__thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.bb-review__shipping-icon img {
+  display: block;
+  width: 29px;
+  height: 29px;
+  object-fit: contain;
+}
+
+.bb-review__line-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.bb-review__line-title,
+.bb-review__shipping-copy > span:last-child {
+  overflow: hidden;
+  color: var(--bb-c-ink);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+  text-overflow: ellipsis;
+}
+
+.bb-review__variant {
+  color: var(--bb-c-subtle);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.bb-review__stepper {
+  display: inline-flex;
+  align-items: center;
+  min-width: 72px;
+  justify-content: space-between;
+  gap: 4px;
+  padding-block: 4px;
+  color: var(--bb-c-ink);
+  flex-shrink: 0;
+}
+
+.bb-review__stepper .bb-quantity-stepper__button {
+  width: 20px;
+  height: 20px;
+}
+
+.bb-review__line-price {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  color: var(--bb-c-accent);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.bb-review__compare-price {
+  color: var(--bb-c-muted);
+  font-weight: 500;
+}
+
+.bb-review__summary {
+  gap: 8px;
+}
+
+.bb-review__guarantee {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--bb-c-graphite);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.bb-review__guarantee-badge {
+  display: block;
+  width: 78px;
+  height: 78px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.bb-review__financing {
+  padding: 6px 8px;
+  color: var(--bb-c-panel);
+  background-color: var(--bb-c-accent);
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.bb-review__totals {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.bb-review__totals strong {
+  color: var(--bb-c-accent);
+  font-size: 24px;
+  line-height: 32px;
+}
+
+.bb-review__savings {
+  margin: 0;
+  color: var(--bb-c-success);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.bb-review__checkout {
+  width: 100%;
+  padding: 13px 16px;
+  color: var(--bb-c-panel);
+  background-color: var(--bb-c-accent);
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.bb-review__save {
+  color: #484848;
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: underline;
+}
+
+.bb-review__save-status {
+  color: var(--bb-c-success);
+  font-size: 12px;
+  text-align: center;
+}
+
+.bb-review__save-status:empty {
+  display: none;
+}
+
+@media screen and (max-width: 420px) {
+  .bb-review__line {
+    gap: 8px;
+  }
+
+  .bb-review__line-main {
+    gap: 8px;
+  }
+}
+
+.bb-review__checkout:focus-visible,
+.bb-review__save:focus-visible {
+  outline: 2px solid var(--bb-c-accent);
+  outline-offset: 2px;
+}

@@ -281,6 +281,23 @@
       "close_tooltip": "Close",
       "previous": "Previous slide",
       "next": "Next slide"
+    },
+    "bundle_builder": {
+      "step_of": "Step {{ step }} of {{ total }}",
+      "selected": "{{ count }} selected",
+      "builder_label": "Bundle builder steps",
+      "review_label": "Bundle summary",
+      "review_eyebrow": "Review",
+      "variant_options": "Options for {{ product }}",
+      "decrease_quantity": "Decrease quantity",
+      "increase_quantity": "Increase quantity",
+      "quantity_label": "Quantity {{ count }}",
+      "free": "FREE",
+      "shipping_label": "Fast Shipping",
+      "shipping_original_price": "$5.99",
+      "savings_html": "Congrats! You're saving {{ amount }} on your security bundle!",
+      "financing_label": "as low as {{ price }}/mo",
+      "saved_label": "Your system was saved for later"
     }
   },
   "products": {
