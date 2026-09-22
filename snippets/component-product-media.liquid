@@ -1,0 +1,47 @@
+{% doc %}
+  Product media renderer.
+
+  @param {object} media - Product media object
+  @param {boolean} [loop] - Enable video looping
+
+  @example
+  {% render 'component-product-media',
+    media: product.featured_media,
+    loop: true
+  %}
+{% enddoc %}
+
+{% case media.media_type %}
+  {% when 'image' %}
+    {{
+      media
+      | image_url: width: media.width
+      | image_tag:
+        width: media.width,
+        height: media.height,
+        loading: 'eager',
+        alt: media.alt,
+        data-media-id: media.id
+    }}
+
+  {% when 'external_video' %}
+    {{ media | external_video_tag }}
+
+  {% when 'video' %}
+    {{
+      media
+      | media_tag:
+        image_size: '2048x',
+        autoplay: true,
+        loop: loop,
+        controls: true,
+        preload: 'none',
+        data-media-id: media.id
+    }}
+
+  {% when 'model' %}
+    {{ media | model_viewer_tag }}
+
+  {% else %}
+    {{ media | media_tag }}
+{% endcase %}

@@ -1,0 +1,131 @@
+{% doc %}
+  Renders a dropdown navigation list with support for nested child links.
+  Can render in a drawer style for mobile or inline for the header.
+
+  @param {string} [nav_style] - 'drawer' to render classes for drawer navigation
+  @param {linklist} menu - Menu object to render
+  @param {string} menu_color_scheme - Color scheme handle for menu background
+
+  @example
+  {% render 'component-nav-dropdown', nav_style: 'drawer', menu: section.settings.menu, menu_color_scheme: section.settings.menu_color_scheme %}
+{% enddoc %}
+{% unless nav_style == 'drawer' %}
+  {% style %}
+    #main-header .nav-dropdown,
+    #main-header .nav-dropdown_child {
+      position: absolute;
+      top: 100%;
+      gap: 0;
+      align-items: stretch;
+      flex-direction: column;
+      flex-wrap: nowrap ;
+      margin-top: 1px;
+      overflow: hidden;
+      max-height: calc(100vh - var(--header-height)- var(--announcement-bar-height, 0px));
+      overflow-y: auto;
+    }
+    
+    .header-sticky #main-header .nav-dropdown {
+      max-height: calc(100vh - var(--header-height));
+    }
+    
+    #main-header .nav-dropdown {
+      box-shadow: rgba(0, 0, 0, 0.1) 0 1px 3px 0, rgba(0, 0, 0, 0.06) 0 1px 2px 0;
+    }
+    #main-header .nav-dropdown_child {
+      position: static;
+    }
+    #main-header .nav-dropdown a,
+    #main-header .nav-dropdown .menu-toggle {
+      display: flex;
+      min-width: 20ch;
+      width: 100%;
+      font-size: 15px;
+      line-height: 1.5;
+      padding: 12px 18px;
+      border-bottom: 1px solid rgb(var(--color-foreground), 0.2);
+    }
+  {% endstyle %}
+{% endunless %}
+<ul
+  {% if nav_style == 'drawer' %}
+    class="menu-drawer_navigation"
+  {% endif %}
+>
+  {% for link in menu.links %}
+    <li x-data="{ menuOpen: false, activeSubMenu: null }" @click.outside="menuOpen = false; activeSubMenu = null">
+      {% if link.links != blank %}
+        <div
+          @click="menuOpen = !menuOpen"
+          :class="{ 'menu-open': menuOpen }"
+          class="menu-toggle"
+        >
+          {{- link.title | escape -}}
+          {{- 'icon-caret.svg' | inline_asset_content -}}
+        </div>
+        <ul
+          x-show="menuOpen"
+          class="nav-{{ nav_style }} color-{{ menu_color_scheme }} gradient"
+          x-transition
+          role="list"
+          x-cloak
+        >
+          {%- for childlink in link.links -%}
+            <li>
+              {% if childlink.links == blank %}
+                <a
+                  href="{{ childlink.url }}"
+                  class="header__menu-item header__menu-item--child"
+                  {% if childlink.current %}
+                    aria-current="page"
+                  {% endif %}
+                >
+                  <span> {{ childlink.title | escape }} </span>
+                </a>
+              {% else %}
+                <div
+                  @click="activeSubMenu = (activeSubMenu === '{{ childlink.title | escape }}' ? null : '{{ childlink.title | escape }}')"
+                  :class="{ 'menu-open': activeSubMenu === '{{ childlink.title | escape }}' }"
+                  class="menu-toggle"
+                >
+                  {{- childlink.title | escape -}}
+                  {{- 'icon-caret.svg' | inline_asset_content -}}
+                </div>
+                <ul
+                  x-show="activeSubMenu === '{{ childlink.title | escape }}'"
+                  class="nav-dropdown_child"
+                  x-transition
+                  role="list"
+                  x-cloak
+                >
+                  {%- for grandchildlink in childlink.links -%}
+                    <li>
+                      <a
+                        href="{{ grandchildlink.url }}"
+                        class="header__menu-item header__menu-item--grandchild"
+                        {% if grandchildlink.current %}
+                          aria-current="page"
+                        {% endif %}
+                      >
+                      <span> {{ grandchildlink.title | escape }} </span>
+                      </a>
+                    </li>
+                  {%- endfor -%}
+                </ul>
+              {% endif %}
+            </li>
+          {%- endfor -%}
+        </ul>
+      {% else %}
+        <a
+          href="{{ link.url }}"
+          {% if link.current %}
+            aria-current="page"
+          {% endif %}
+        >
+          {{- link.title | escape -}}
+        </a>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>

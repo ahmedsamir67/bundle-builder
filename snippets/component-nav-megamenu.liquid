@@ -1,0 +1,103 @@
+{% doc %}
+  Renders a megamenu layout for a navigation item with child links. The menu
+  expands on click using Alpine.js and supports nested child links.
+
+  @param {linklist} menu - Menu object to render
+  @param {string} menu_color_scheme - Color scheme handle for menu background
+
+  @example
+  {% render 'component-nav-megamenu', menu: section.settings.menu, menu_color_scheme: section.settings.menu_color_scheme %}
+{% enddoc %}
+{% stylesheet %}
+  #main-header .nav-megamenu {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    width: 100%;
+    margin-top: 1px;
+  }
+  #main-header .nav-megamenu .page-width {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin-inline: auto;
+    align-items: flex-start;
+    padding: 30px 20px;
+  }
+  #main-header .nav-megamenu .nav-megamenu_child {
+    position: static;
+    margin-top: 10px;
+    display: block;
+  }
+  #main-header .nav-megamenu_heading {
+    font-weight: 600;
+  }
+  #main-header .nav-megamenu_child a {
+    display: block;
+    padding: 6px 0;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+{% endstylesheet %}
+<ul>
+  {% for link in menu.links %}
+    <li x-data="{ menuOpen: false }" @click.outside="menuOpen = false">
+      {% if link.links != blank %}
+        <button
+          @click="menuOpen = !menuOpen"
+          :class="{ 'menu-open': menuOpen }"
+          class="menu-toggle"
+        >
+          {{- link.title | escape -}}
+          {{- 'icon-caret.svg' | inline_asset_content -}}
+        </button>
+        <div
+          x-show="menuOpen"
+          x-transition
+          x-cloak
+          class="nav-megamenu color-{{ menu_color_scheme }} gradient"
+        >
+          <ul class="page-width" role="list">
+            {%- for childlink in link.links -%}
+              <li>
+                <a
+                  href="{{ childlink.url }}"
+                  class="nav-megamenu_heading"
+                  {% if childlink.current %}
+                    aria-current="page"
+                  {% endif %}
+                >
+                  {{ childlink.title | escape }}
+                </a>
+                {%- if childlink.links != blank -%}
+                  <ul class="nav-megamenu_child" role="list">
+                    {%- for grandchildlink in childlink.links -%}
+                      <li>
+                        <a
+                          href="{{ grandchildlink.url }}"
+                          {% if grandchildlink.current %}
+                            aria-current="page"
+                          {% endif %}
+                        >
+                          {{ grandchildlink.title | escape }}
+                        </a>
+                      </li>
+                    {%- endfor -%}
+                  </ul>
+                {%- endif -%}
+              </li>
+            {%- endfor -%}
+          </ul>
+        </div>
+      {% else %}
+        <a
+          href="{{ link.url }}"
+          {% if link.current %}
+            aria-current="page"
+          {% endif %}
+        >
+          {{- link.title | escape -}}
+        </a>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>

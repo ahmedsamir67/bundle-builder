@@ -1,0 +1,202 @@
+{% comment %} /sections/featured-collections.liquid {% endcomment %}
+
+{{ 'section-featured-collections.css' | asset_url | stylesheet_tag }}
+
+{%- liquid
+  assign heading = section.settings.heading
+  assign subheading = section.settings.subheading
+  assign collections_to_show = section.blocks.size
+  assign heading_alignment = section.settings.heading_alignment
+  assign style = section.settings.style
+  assign grid_gap = section.settings.grid_gap
+  assign hide_shop_now = section.settings.hide_shop_now
+-%}
+
+{%- if collections_to_show > 0 -%}
+  <div class="color-{{ section.settings.color_scheme }} featured-collections-section">
+    <div class="page-width">
+      <div
+        class="featured-collections__header"
+        style="text-align: {{ heading_alignment }};"
+      >
+      {%- if heading != blank -%}
+        <h2 class="featured-collections__heading">{{ heading | escape }}</h2>
+      {%- endif -%}
+      {%- if subheading != blank -%}
+        <p class="featured-collections__subheading">{{ subheading | escape }}</p>
+      {%- endif -%}
+    </div>
+
+    <div class="featured-collections__grid" style="gap: {{ grid_gap }}px;">
+      {%- for block in section.blocks -%}
+        {%- assign collection = block.settings.collection -%}
+        {%- assign custom_image = block.settings.custom_image -%}
+        {%- assign custom_title = block.settings.custom_title -%}
+        {%- assign collection_image = custom_image | default: collection.featured_image | default: collection.image -%}
+        {%- assign display_title = custom_title | default: collection.title -%}
+
+        <div class="featured-collections__card grid__item" {{ block.shopify_attributes }}>
+          <a
+            href="{{ collection.url | default: '#' }}"
+            class="collection-card__link {% if style == 'style2' %} collection-card__link--below{% endif %}"
+          >
+            <div class="collection-card__image-wrapper media--portrait {% if collection_image == blank %} placeholder {% endif %}">
+              {%- if collection_image != blank -%}
+                <img
+                  srcset="
+                    {%- if collection_image.width >= 165 -%}{{ collection_image | image_url: width: 165 }} 165w,{%- endif -%}
+                    {%- if collection_image.width >= 360 -%}{{ collection_image | image_url: width: 360 }} 360w,{%- endif -%}
+                    {%- if collection_image.width >= 533 -%}{{ collection_image | image_url: width: 533 }} 533w,{%- endif -%}
+                    {%- if collection_image.width >= 720 -%}{{ collection_image | image_url: width: 720 }} 720w,{%- endif -%}
+                    {{ collection_image | image_url }} {{ collection_image.width }}w
+                  "
+                  src="{{ collection_image | image_url: width: 533 }}"
+                  sizes="(min-width: 990px) calc(var(--page-width) / 5 - 20px), (min-width: 769px) calc(100vw / 2 - 2rem), calc(100vw - 2rem)"
+                  alt="{{ collection_image.alt | escape }}"
+                  loading="lazy"
+                  width="{{ collection_image.width }}"
+                  height="{{ collection_image.height }}"
+                  class="collection-card__image"
+                >
+              {%- else -%}
+                {{ 'collection-1' | placeholder_svg_tag: 'placeholder-svg collection-card__image' }}
+              {%- endif -%}
+            </div>
+            {%- if style == 'style2' -%}
+              <div class="collection-card__info collection-card__info--below">
+                <h3 class="collection-card__title">
+                  {{ display_title | default: 'Collection Title' }}
+                </h3>
+                {%- unless hide_shop_now -%}
+                  <span class="collection-card__shop-now">Shop Now</span>
+                {%- endunless -%}
+              </div>
+            {%- else -%}
+              <div class="collection-card__info">
+                <h3 class="collection-card__title">
+                  {{ display_title | default: 'Collection Title' }}
+                </h3>
+                {%- unless hide_shop_now -%}
+                  <span class="collection-card__shop-now">Shop Now</span>
+                {%- endunless -%}
+              </div>
+            {%- endif -%}
+          </a>
+        </div>
+      {%- endfor -%}
+    </div>
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Featured Collections",
+  "tag": "section",
+  "class": "featured-collections",
+  "settings": [
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:sections.all.colors.label",
+      "default": "scheme-1"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Find the perfect fit for your game"
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Browse through our collections"
+    },
+    {
+      "type": "select",
+      "id": "heading_alignment",
+      "label": "Heading Alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "select",
+      "id": "style",
+      "label": "Card Style",
+      "options": [
+        { "value": "style1", "label": "Style 1 (Text/Button above or overlay)" },
+        { "value": "style2", "label": "Style 2 (Text/Button below image)" }
+      ],
+      "default": "style2"
+    },
+    {
+      "type": "range",
+      "id": "grid_gap",
+      "label": "Grid Gap",
+      "default": 25,
+      "unit": "px",
+      "min": 0,
+      "max": 40,
+      "step": 1
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_shop_now",
+      "label": "Hide 'Shop Now' Button",
+      "default": true
+    }
+  ],
+  "blocks": [
+    {
+      "type": "collection_card",
+      "name": "Collection Card",
+      "limit": 5,
+      "settings": [
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Collection"
+        },
+        {
+          "type": "image_picker",
+          "id": "custom_image",
+          "label": "Custom Image (optional)",
+          "info": "Overrides the collection image if set."
+        },
+        {
+          "type": "text",
+          "id": "custom_title",
+          "label": "Custom Title (optional)",
+          "info": "Overrides the collection title if set."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Featured Collections",
+      "blocks": [
+        { "type": "collection_card" },
+        { "type": "collection_card" },
+        { "type": "collection_card" },
+        { "type": "collection_card" },
+        { "type": "collection_card" }
+      ]
+    }
+  ]
+}
+{% endschema %}

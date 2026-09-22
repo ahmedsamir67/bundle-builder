@@ -1,0 +1,162 @@
+{% comment %} /sections/selling-points.liquid {% endcomment %}
+
+{{ 'section-selling-points.css' | asset_url | stylesheet_tag }}
+
+{%- style -%}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+
+  .section-{{ section.id }}-icon-size {
+    --selling-points-icon-size: {{ section.settings.icon_size }}px;
+  }
+{%- endstyle -%}
+
+{%- liquid
+  assign blocks_to_show = section.blocks.size
+-%}
+
+{%- if blocks_to_show > 0 -%}
+  <div class="color-{{ section.settings.color_scheme }} selling-points-section section-{{ section.id }}-padding section-{{ section.id }}-icon-size">
+    <div class="page-width">
+      <div class="selling-points__grid">
+        {%- for block in section.blocks -%}
+          {%- assign icon = block.settings.icon -%}
+          {%- assign title = block.settings.title -%}
+          {%- assign description = block.settings.description -%}
+
+          <div class="selling-points__item" {{ block.shopify_attributes }}>
+            <div class="selling-points__icon-wrapper">
+              {%- if icon != blank -%}
+                <img
+                  srcset="
+                    {%- if icon.width >= 50 -%}{{ icon | image_url: width: 50 }} 50w,{%- endif -%}
+                    {%- if icon.width >= 100 -%}{{ icon | image_url: width: 100 }} 100w,{%- endif -%}
+                    {%- if icon.width >= 150 -%}{{ icon | image_url: width: 150 }} 150w,{%- endif -%}
+                    {{ icon | image_url }} {{ icon.width }}w
+                  "
+                  src="{{ icon | image_url: width: 100 }}"
+                  sizes="{{ section.settings.icon_size }}px"
+                  alt="{{ icon.alt | escape }}"
+                  loading="lazy"
+                  width="{{ icon.width }}"
+                  height="{{ icon.height }}"
+                  class="selling-points__icon"
+                >
+              {%- else -%}
+                <div class="selling-points__icon-placeholder">
+                  {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+                </div>
+              {%- endif -%}
+            </div>
+
+            <div class="selling-points__content">
+              {%- if title != blank -%}
+                <h3 class="selling-points__title">{{ title | escape | default: 'Selling Point Title' }}</h3>
+              {%- endif -%}
+
+              {%- if description != blank -%}
+                <p class="selling-points__description">
+                  {{ description | escape | default: 'Selling point description text' }}
+                </p>
+              {%- endif -%}
+            </div>
+          </div>
+        {%- endfor -%}
+      </div>
+    </div>
+  </div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Selling Points",
+  "tag": "section",
+  "class": "selling-points",
+  "settings": [
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:sections.all.colors.label",
+      "default": "scheme-1"
+    },
+    {
+      "type": "header",
+      "content": "Spacing Settings"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding Top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Padding Bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "header",
+      "content": "Icon Settings"
+    },
+    {
+      "type": "range",
+      "id": "icon_size",
+      "label": "Icon Size",
+      "min": 40,
+      "max": 120,
+      "step": 10,
+      "unit": "px",
+      "default": 60
+    }
+  ],
+  "blocks": [
+    {
+      "type": "selling_point",
+      "name": "Selling Point",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "icon",
+          "label": "Icon"
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "Selling Point Title"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description",
+          "default": "Selling point description text"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Selling Points",
+      "blocks": [{ "type": "selling_point" }, { "type": "selling_point" }, { "type": "selling_point" }, { "type": "selling_point" }]
+    }
+  ]
+}
+{% endschema %}

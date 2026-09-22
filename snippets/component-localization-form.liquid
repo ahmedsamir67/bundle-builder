@@ -1,0 +1,168 @@
+{% doc %}
+  Renders country and/or language selectors using Shopify's localization form.
+  Provides toggleable lists with Alpine.js and writes selected codes to inputs.
+
+  @param {boolean} [enable_country_selector] - If true, show country selector
+  @param {boolean} [enable_language_selector] - If true, show language selector
+  @param {string} menu_color_scheme - Color scheme for the dropdown list
+
+  @example
+  {% render 'component-localization-form',
+    enable_country_selector: true,
+    enable_language_selector: true,
+    menu_color_scheme: section.settings.menu_color_scheme
+  %}
+{% enddoc %}
+
+{% stylesheet %}
+  localization-form {
+    display: grid;
+    place-items: center;
+  }
+  .localization-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: inherit;
+    background: transparent;
+    min-width: max-content;
+    max-width: 100%;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+  .localization-button svg {
+    width: 12px;
+    height: auto;
+    transition: 300ms ease;
+  }
+  .localization-button.localization-open svg {
+    transform: scaleY(-1);
+  }
+  .localization-list {
+    position: absolute;
+    box-shadow: #0000001a 0 1px 3px,#0000000f 0 1px 2px;
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+    max-height: 60vh;
+    overflow: auto;
+  }
+  .localization-list a {
+    display: block;
+    color: inherit;
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgb(var(--color-foreground), 0.2);
+    text-decoration: none;
+  }
+{% endstylesheet %}
+
+{% if enable_country_selector and localization.available_countries.size > 1 %}
+  <localization-form>
+    {% form 'localization' %}
+      <div
+        class="localization-wrapper"
+        x-data="{ localizationOpen: false }"
+        @click.outside="localizationOpen = false"
+      >
+        <button
+          type="button"
+          class="localization-button"
+          aria-controls="CountryList"
+          @click="localizationOpen = !localizationOpen"
+          :class="{ 'localization-open': localizationOpen }"
+        >
+          <span>
+            {{ localization.country.name }} ({{ localization.country.currency.iso_code }}
+            {{ localization.country.currency.symbol }})
+          </span>
+          {{- 'icon-caret.svg' | inline_asset_content -}}
+        </button>
+
+        <ul
+          x-show="localizationOpen"
+          x-cloak
+          id="CountryList"
+          role="list"
+          class="localization-list color-{{ menu_color_scheme }} gradient"
+        >
+          {% for country in localization.available_countries %}
+            <li class="localization-item" tabindex="-1">
+              <a
+                href="#"
+                {% if country.iso_code == localization.country.iso_code %}
+                  aria-current="true"
+                {% endif %}
+                data-value="{{ country.iso_code }}"
+              >
+                {{ country.name }} ({{ country.currency.iso_code }}
+                {{ country.currency.symbol }})
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <input
+          type="hidden"
+          name="country_code"
+          value="{{ localization.country.iso_code }}"
+        >
+      </div>
+    {% endform %}
+  </localization-form>
+{% endif %}
+
+{% if enable_language_selector and localization.available_languages.size > 1 %}
+  <localization-form>
+    {% form 'localization' %}
+      <div
+        class="localization-wrapper"
+        x-data="{ localizationOpen: false }"
+        @click.outside="localizationOpen = false"
+      >
+        <button
+          type="button"
+          class="localization-button"
+          aria-controls="LanguageList"
+          @click="localizationOpen = !localizationOpen"
+          :class="{ 'localization-open': localizationOpen }"
+        >
+          {{ localization.language.endonym_name | capitalize }}
+          {{- 'icon-caret.svg' | inline_asset_content -}}
+        </button>
+
+        <ul
+          x-show="localizationOpen"
+          x-cloak
+          id="LanguageList"
+          role="list"
+          class="localization-list color-{{ menu_color_scheme }} gradient"
+        >
+          {% for language in localization.available_languages %}
+            <li class="localization-item" tabindex="-1">
+              <a
+                href="#"
+                {% if language.iso_code == localization.language.iso_code %}
+                  aria-current="true"
+                {% endif %}
+                hreflang="{{ language.iso_code }}"
+                lang="{{ language.iso_code }}"
+                data-value="{{ language.iso_code }}"
+              >
+                {{ language.endonym_name | capitalize }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <input
+          type="hidden"
+          name="language_code"
+          value="{{ localization.language.iso_code }}"
+        >
+      </div>
+    {% endform %}
+  </localization-form>
+{% endif %}

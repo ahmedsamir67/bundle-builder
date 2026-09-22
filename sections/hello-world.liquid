@@ -1,0 +1,199 @@
+{% comment %}
+  Welcome to Shopify theme development!
+{% endcomment %}
+
+{% style %}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+{% endstyle %}
+
+<div class="color-{{ section.settings.color_scheme }} hello-world-section section-{{ section.id }}-padding">
+  <div class="page-width">
+    <div class="welcome">
+      <div class="welcome-content">
+        <div>
+          <h1>Hello, World!</h1>
+
+          <p class="welcome-description">
+            The Skeleton theme is a minimal, carefully structured Shopify theme designed to help you quickly get started.
+            Designed with modularity, maintainability, and Shopify's best practices in mind.
+          </p>
+
+          <p class="welcome-description">
+            Themes shape the online store experience for merchants and their customers. Build fast, flexible themes at scale
+            using Liquid, Shopify's theme templating language, along with HTML, CSS, JavaScript, and JSON.
+          </p>
+        </div>
+        <div class="icon">
+          <img src="{{ 'icon-shoppy-x-ray.svg' | asset_url }}" width="300" height="300">
+        </div>
+      </div>
+    </div>
+
+    <div class="highlights">
+      <div class="highlight">
+        <h3>Key Concepts</h3>
+        <p class="highlight-description">
+          Shopify themes are a package of template files, building blocks, and supporting assets. Use these building blocks
+          to create modular, customizable themes.
+        </p>
+        <p>{{ 'Learn more about key concepts' | link_to: 'https://shopify.dev/docs/storefronts/themes/architecture' }}</p>
+      </div>
+
+      <div class="highlight">
+        <h3>Liquid</h3>
+        <p class="highlight-description">
+          The Liquid templating language is the backbone of Shopify themes, and is used to load dynamic content on
+          storefronts. Extend Liquid objects to store and present custom data using metafields.
+        </p>
+        <p>{{ 'View the Liquid reference' | link_to: 'https://shopify.dev/docs/api/liquid' }}</p>
+      </div>
+
+      <div class="highlight">
+        <h3>Best Practices</h3>
+        <p class="highlight-description">
+          To optimize your theme development experience, Shopify has established a set of best practices that you can refer
+          to when developing your theme and setting up your toolchains and processes.
+        </p>
+        <p>{{ 'Follow best practices' | link_to: 'https://shopify.dev/docs/storefronts/themes/best-practices' }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% stylesheet %}
+  .hello-world-section {
+    display: block;
+    width: 100%;
+    background-color: rgb(var(--color-background));
+    color: rgb(var(--color-foreground));
+  }
+
+  .welcome {
+    display: block;
+    width: 100%;
+  }
+
+  .welcome-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .welcome-description {
+    max-width: 80ch;
+    line-height: 1.4;
+    margin-top: 1.5rem;
+    color: rgb(var(--color-foreground));
+  }
+
+  .highlights {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 50px;
+  }
+
+  @media (max-width: 1100px) {
+    .highlights {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .highlight {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 24px;
+    border-radius: 8px;
+    background-color: rgba(var(--color-foreground), 0.05);
+    color: rgb(var(--color-foreground));
+    line-height: 1.4;
+    opacity: 0.9;
+  }
+
+  .highlight > * + * {
+    margin-top: 1rem;
+  }
+
+  .highlight h3 {
+    font-size: 1rem;
+    color: rgb(var(--color-foreground));
+  }
+
+  .highlight-description {
+    flex: 1 1;
+  }
+
+  .highlight a {
+    display: flex;
+    width: fit-content;
+    background-color: rgba(var(--color-foreground), 0.1);
+    box-shadow: rgba(0, 0, 0, 0.1) 0px -2px 0px 0px inset, rgba(255, 255, 255, 0.1) 0px 1px 0px 0px inset;
+    border: 1px solid rgba(var(--color-foreground), 0.2);
+    border-radius: 4px;
+    color: rgb(var(--color-foreground));
+    padding: 3px 10px 5px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .highlight a:hover {
+    background-color: rgba(var(--color-foreground), 0.15);
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Hello World",
+  "settings": [
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:sections.all.colors.label",
+      "default": "scheme-1"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.all.padding.section_padding_heading"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_top",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_bottom",
+      "default": 36
+    }
+  ],
+  "presets": [
+    {
+      "name": "Hello World Template",
+      "category": "Demo"
+    }
+  ]
+}
+{% endschema %}

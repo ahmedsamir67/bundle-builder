@@ -1,0 +1,55 @@
+{% doc %}
+  Renders a product media modal. Also see 'product-media-gallery'.
+
+  @param {string} section_id - Parent section id used for DOM ids
+  @param {string} color_scheme - Color scheme handle for modal background
+  @param {boolean} enable_video_looping - Whether to loop product videos
+
+  @example
+  {% render 'component-product-media-modal',
+    section_id: '1234567890',
+    color_scheme: 'scheme-1',
+    enable_video_looping: false
+  %}
+{% enddoc %}
+
+<product-media-modal id="ProductModal-{{ section_id }}" class="product-media-modal media-modal">
+  <div
+    class="product-media-modal__dialog color-{{ color_scheme }} gradient"
+    role="dialog"
+    aria-label="{{ 'products.modal.label' | t }}"
+    aria-modal="true"
+    tabindex="-1"
+  >
+    <button
+      id="ModalClose-{{ section_id }}"
+      type="button"
+      class="product-media-modal__toggle"
+      aria-label="{{ 'accessibility.close' | t }}"
+    >
+      {{ 'icon-close.svg' | inline_asset_content }}
+    </button>
+
+    <div
+      class="product-media-modal__content color-{{ color_scheme }} gradient"
+      role="document"
+      aria-label="{{ 'products.modal.label' | t }}"
+      tabindex="0"
+    >
+      {%- liquid
+        if product.selected_or_first_available_variant.featured_media != null
+          assign media = product.selected_or_first_available_variant.featured_media
+          render 'component-product-media', media: media, loop: enable_video_looping
+        endif
+      -%}
+
+      {%- for media in product.media -%}
+        {%- liquid
+          unless media.id == product.selected_or_first_available_variant.featured_media.id
+            render 'component-product-media', media: media, loop: enable_video_looping
+          endunless
+        -%}
+      {%- endfor -%}
+    </div>
+  </div>
+</product-media-modal>

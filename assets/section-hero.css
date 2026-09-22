@@ -1,0 +1,252 @@
+/* Assets/section-hero-banner.css */
+
+.hero-banner-section {
+  display: block;
+  width: 100%;
+  position: relative;
+  background-color: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  padding: 60px 20px;
+  min-height: 600px;
+  overflow: hidden;
+}
+
+.hero-banner-section .hero-banner__background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.hero-banner-section .hero-banner__background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--hero-overlay-color, #000000);
+  /* Use variable, provide fallback */
+  opacity: var(--hero-overlay-opacity, 0.3);
+  /* Use variable, provide fallback */
+  z-index: 2;
+}
+
+.hero-banner-section .hero-banner__background img,
+.hero-banner-section .hero-banner__background video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-banner-section .hero-banner__content {
+  position: absolute;
+  z-index: 3;
+  max-width: 50%;
+  padding: 0 5%;
+}
+
+/* Horizontal content alignment classes */
+.hero-banner-section .hero-banner__content--h-left {
+  left: 5%;
+  right: auto;
+  text-align: left;
+}
+
+.hero-banner-section .hero-banner__content--h-center {
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  max-width: 60%;
+}
+
+.hero-banner-section .hero-banner__content--h-right {
+  left: auto;
+  right: 5%;
+  text-align: right;
+}
+
+/* Vertical content alignment classes */
+.hero-banner-section .hero-banner__content--v-top {
+  top: 60px;
+  bottom: auto;
+}
+
+.hero-banner-section .hero-banner__content--v-center {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.hero-banner-section .hero-banner__content--v-bottom {
+  top: auto;
+  bottom: 60px;
+}
+
+/* Combined transforms for center-center alignment */
+.hero-banner-section .hero-banner__content--h-center.hero-banner__content--v-center {
+  transform: translate(-50%, -50%);
+}
+
+.hero-banner-section .hero-banner__stars {
+  margin-bottom: 8px;
+  font-size: 0.9em;
+}
+
+.hero-banner-section .hero-banner__stars .stars {
+  color: #ffc107;
+  margin-right: 5px;
+}
+
+.hero-banner-section .hero-banner__heading {
+  font-size: 4.4rem;
+  margin-bottom: 5px;
+  font-weight: bold;
+  line-height: 1.2;
+  color: rgb(var(--color-foreground));
+}
+
+.hero-banner-section .hero-banner__subheading {
+  font-size: 2.2rem;
+  margin-bottom: 20px;
+  max-width: 600px;
+}
+
+.hero-banner-section .hero-banner__button {
+  display: inline-block;
+  padding: 10px 30px 10px 30px;
+  background-color: var(--hero-button-background, #FFFFFF);
+  color: var(--hero-button-text, #000000);
+  text-decoration: none;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  max-width: 211px;
+  width: 100%;
+  text-transform: uppercase;
+  font-size: 2rem;
+}
+
+.hero-banner-section .hero-banner__button:hover {
+  background-color: var(--hero-button-background, #FFFFFF);
+  opacity: 0.8;
+  transform: translateY(-2px);
+}
+
+.hero-banner-section .hero-banner__endorsement {
+  position: absolute;
+  bottom: 40px;
+  right: 5%;
+  z-index: 3;
+  text-align: right;
+}
+
+.hero-banner-section .hero-banner__endorsement-name {
+  font-size: 1.1em;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.hero-banner-section .hero-banner__endorsement-signature img {
+  max-width: 100px;
+  height: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero-banner-section {
+    padding: 40px 15px;
+    min-height: 450px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .hero-banner-section .hero-banner__content {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    transform: none;
+    margin: 0;
+    padding: 0;
+    max-width: 90%;
+    width: 100%;
+  }
+
+  /* Mobile horizontal alignment */
+  .hero-banner-section .hero-banner__content--h-left {
+    text-align: left;
+    align-self: flex-start;
+  }
+
+  .hero-banner-section .hero-banner__content--h-center {
+    text-align: center;
+    align-self: center;
+  }
+
+  .hero-banner-section .hero-banner__content--h-right {
+    text-align: right;
+    align-self: flex-end;
+  }
+
+  /* Mobile vertical alignment */
+  .hero-banner-section .hero-banner__content--v-top {
+    align-self: flex-start;
+    margin-top: 20px;
+    margin-bottom: auto;
+  }
+
+  .hero-banner-section .hero-banner__content--v-center {
+    align-self: center;
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+
+  .hero-banner-section .hero-banner__content--v-bottom {
+    align-self: flex-end;
+    margin-top: auto;
+    margin-bottom: 20px;
+  }
+
+  /* Perfect center-center alignment */
+  .hero-banner-section .hero-banner__content--h-center.hero-banner__content--v-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    align-self: auto;
+    margin-top: 20px;
+  }
+
+  .hero-banner-section .hero-banner__subheading {
+    margin: 15px;
+  }
+
+  .hero-banner-section .hero-banner__heading {
+    font-size: 3rem;
+  }
+
+  .hero-banner-section .hero-banner__subheading {
+    font-size: 1.8rem;
+  }
+
+  .hero-banner-section .hero-banner__button {
+    font-size: 1.4rem;
+    max-width: 175px;
+  }
+
+  .hero-banner-section .hero-banner__endorsement {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    text-align: center;
+    margin-top: 30px;
+    padding: 0 20px;
+    max-width: 90%;
+    left: auto;
+    transform: none;
+  }
+}

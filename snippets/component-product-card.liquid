@@ -1,0 +1,268 @@
+{% comment %}
+  Renders a product card with optional variant swatches
+
+  Accepts:
+  - card_product: {Object} Product Liquid object (required)
+  - show_vendor: {Boolean} Show the product vendor. Default: false
+  - enable_swatches: {Boolean} Enable variant swatches display
+  - swatch_trigger: {String} Product option name to use for swatches (e.g., 'Color')
+  - swatch_type: {String} Type of swatch to display ('color' or 'image')
+  - media_aspect_ratio: {String} Size of the product image card. Values are "square" "adapt" and "portrait". Default is "adapt" (optional)
+  - button_text_color: {String} Color for button text (optional)
+  - button_border_color: {String} Color for button border (optional)
+
+  Example usage:
+  {% render 'card-product',
+    card_product: product,
+    show_vendor: section.settings.show_vendor,
+    enable_swatches: section.settings.enable_swatches,
+    swatch_trigger: section.settings.swatch_trigger,
+    swatch_type: section.settings.swatch_type,
+    media_aspect_ratio: section.settings.media_aspect_ratio,
+    button_text_color: section.settings.button_text_color,
+    button_border_color: section.settings.button_border_color
+  %}
+{% endcomment %}
+
+<product-card
+  class="product-card"
+  data-product-id="{{ card_product.id }}"
+>
+  <!-- Data Layer -->
+  {%- liquid
+    assign card_variant = card_product.selected_or_first_available_variant
+    assign item_id = card_variant.sku | default: card_variant.id
+  -%}
+  <script type="application/json" data-product-item-data>
+    {
+      "item_id": {{ item_id | json }},
+      "item_name": {{ card_product.title | json }},
+      "item_brand": {{ card_product.vendor | json }},
+      "item_category": {{ card_product.type | json }},
+      "item_variant": {{ card_variant.title | json }},
+      "price": {{ card_variant.price | divided_by: 100.0 }},
+      "quantity": 1
+    }
+  </script>
+  <!-- End Data Layer -->
+  <div class="product-card-child">
+    <a
+      href="{{ card_product.url }}"
+      class="card-media"
+    >
+      <div class="card-media-child{% if card_product.featured_image == blank %} card-media-no-image{% endif %}">
+        {% if card_product.featured_image != blank %}
+          {{
+            card_product.featured_image
+            | image_url: width: card_product.featured_image.width
+            | image_tag:
+              width: card_product.featured_image.width,
+              height: card_product.featured_image.height,
+              alt: card_product.featured_media.alt,
+              data-product-image: card_product.id
+            | escape
+          }}
+        {% else %}
+          {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
+        {% endif %}
+      </div>
+      <div class="card-badge-wrapper">
+        {%- if card_product.available == false -%}
+          <div class="card__badge">
+            <span
+              class="badge badge--bottom-left"
+            >
+              {{- 'products.product.sold_out' | t -}}
+            </span>
+          </div>
+        {%- elsif card_product.compare_at_price > card_product.price and card_product.available -%}
+          <div class="card__badge">
+            <span class="badge badge--bottom-left">
+              {{- 'products.product.on_sale' | t -}}
+            </span>
+          </div>
+        {%- endif -%}
+      </div>
+
+      {% assign product_form_id = 'quick-add-' | append: section_id | append: card_product.id %}
+      {% if quick_add == 'standard' %}
+        {%- liquid
+          assign qty_rules = false
+          if card_product.selected_or_first_available_variant.quantity_rule.min > 1 or card_product.selected_or_first_available_variant.quantity_rule.max != null or card_product.selected_or_first_available_variant.quantity_rule.increment > 1
+            assign qty_rules = true
+          endif
+        -%}
+        {%- if card_product.variants_count > 1 or qty_rules -%}
+          <modal-opener data-modal="#QuickAdd-{{ card_product.id }}" class="quick-add__icon-wrapper no-js-hidden">
+            <button
+              id="{{ product_form_id }}-submit"
+              type="submit"
+              name="add"
+              class="quick-add__icon-button"
+              aria-haspopup="dialog"
+              aria-label="{{ 'products.product.choose_options' | t }}"
+              data-product-url="{{ card_product.url }}"
+            >
+              <span class="add-to-cart-text">
+                <span class="add-to-cart-icon-spinner hidden">
+                  {{ 'icon-spinner.svg' | inline_asset_content }}
+                </span>
+                <span class="svg-wrapper add-to-cart-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M16.608 9.421V6.906H3.392v8.016c0 .567.224 1.112.624 1.513.4.402.941.627 1.506.627H8.63M8.818 3h2.333c.618 0 1.212.247 1.649.686a2.35 2.35 0 0 1 .683 1.658v1.562H6.486V5.344c0-.622.246-1.218.683-1.658A2.33 2.33 0 0 1 8.82 3">
+                    </path>
+                    <path stroke="currentColor" stroke-linecap="round" stroke-width="1.5"
+                      d="M14.608 12.563v5m2.5-2.5h-5"></path>
+                  </svg>
+                </span>
+                <span class="add-to-cart-text__content is-visually-hidden-mobile">
+                  Add
+                </span>
+              </span>
+            </button>
+          </modal-opener>
+        {%- else -%}
+          <div
+            data-section-id="{{ section_id }}"
+            class="quick-add__icon-wrapper no-js-hidden"
+          >
+            {% form 'product', card_product, id: product_form_id, novalidate: 'novalidate' %}
+              <input
+                type="hidden"
+                name="id"
+                value="{{ card_product.selected_or_first_available_variant.id }}"
+                class="product-variant-id"
+                {% if card_product.selected_or_first_available_variant.available == false %}
+                  disabled
+                {% endif %}
+              >
+              <button
+                id="{{ product_form_id }}-submit"
+                type="submit"
+                name="add"
+                class="quick-add__icon-button"
+                aria-label="{%- if card_product.selected_or_first_available_variant.available -%}{{ 'products.product.add_to_cart' | t }}{%- else -%}{{ 'products.product.sold_out' | t }}{%- endif -%}"
+                aria-live="polite"
+                data-sold-out-message="true"
+                {% if card_product.selected_or_first_available_variant.available == false %}
+                  disabled
+                {% endif %}
+              >
+                <span class="add-to-cart-text">
+                  <span class="add-to-cart-icon-spinner hidden">
+                    {{ 'icon-spinner.svg' | inline_asset_content }}
+                  </span>
+                  <span class="svg-wrapper add-to-cart-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M16.608 9.421V6.906H3.392v8.016c0 .567.224 1.112.624 1.513.4.402.941.627 1.506.627H8.63M8.818 3h2.333c.618 0 1.212.247 1.649.686a2.35 2.35 0 0 1 .683 1.658v1.562H6.486V5.344c0-.622.246-1.218.683-1.658A2.33 2.33 0 0 1 8.82 3">
+                      </path>
+                      <path stroke="currentColor" stroke-linecap="round" stroke-width="1.5"
+                        d="M14.608 12.563v5m2.5-2.5h-5"></path>
+                    </svg>
+                  </span>
+                  <span class="add-to-cart-text__content is-visually-hidden-mobile">
+                    Add
+                  </span>
+                </span>
+              </button>
+            {%- endform -%}
+          </div>
+        {%- endif -%}
+      {% endif %}
+    </a>
+
+    {% if quick_add == 'standard' %}
+      {%- liquid
+        assign qty_rules = false
+        if card_product.selected_or_first_available_variant.quantity_rule.min > 1 or card_product.selected_or_first_available_variant.quantity_rule.max != null or card_product.selected_or_first_available_variant.quantity_rule.increment > 1
+          assign qty_rules = true
+        endif
+      -%}
+      {%- if card_product.variants_count > 1 or qty_rules -%}
+        <quick-add-modal id="QuickAdd-{{ card_product.id }}" class="quick-add-modal">
+          <div
+            role="dialog"
+            aria-label="{{ 'products.product.choose_product_options' | t: product_name: card_product.title }}"
+            aria-modal="true"
+            class="quick-add-modal__content global-settings-popup"
+            tabindex="-1"
+          >
+            <button
+              id="ModalClose-{{ card_product.id }}"
+              type="button"
+              class="quick-add-modal__toggle"
+              aria-label="{{ 'accessibility.close' | t }}"
+            >
+              {{- 'icon-close.svg' | inline_asset_content -}}
+            </button>
+            <div id="QuickAddInfo-{{ card_product.id }}" class="quick-add-modal__content-info"></div>
+          </div>
+        </quick-add-modal>
+      {%- endif -%}
+    {% endif %}
+
+    <div class="card-information">
+      <div>
+        <h2 class="card-heading product-grid-heading">
+          <a href="{{ card_product.url }}">{{ card_product.title }}</a>
+        </h2>
+        {% if show_vendor %}
+          <span class="card-vendor">{{ card_product.vendor }}</span>
+        {% endif %}
+        <div class="card-pricing">
+          {% render 'component-product-price', product: card_product, show_compare_at_price: true %}
+        </div>
+        {% if enable_swatches %}
+          <div class="product-color-swatches">
+            {%- for option in card_product.options_with_values -%}
+              {%- if option.name == swatch_trigger -%}
+                {%- for value in option.values -%}
+                  {%- for variant in card_product.variants -%}
+                    {%- if variant.options contains value -%}
+                      <span
+                        class="color-swatch"
+                        {%- if variant.featured_image -%}
+                          src="{{ variant.featured_image | image_url: width: 800 }}"
+                          srcset="{{ variant.featured_image | image_url: width: 800 }} 1x, {{ variant.featured_image | image_url: width: 1600 }} 2x"
+                        {%- endif -%}
+                        {%- unless swatch_type == 'image' -%}
+                          style="background-color: {{ value | handleize }};"
+                        {%- endunless -%}
+                        title="{{ value }}"
+                        data-variant-id="{{ variant.id }}"
+                        data-swatch-color="{{ value | handleize }}"
+                      >
+                        {%- if swatch_type == 'image' -%}
+                          {%- liquid
+                            assign variant_image = null
+                            if variant.featured_image != null
+                              assign variant_image = variant.featured_image
+                            else
+                              assign variant_image = card_product.featured_image
+                            endif
+                          -%}
+                          {{
+                            variant_image
+                            | image_url: width: variant_image.width
+                            | image_tag:
+                              width: variant_image.width,
+                              height: variant_image.height,
+                              alt: variant_image.alt,
+                              class: 'data-variant-image'
+                          }}
+                        {%- endif -%}
+                      </span>
+                      {%- break -%}
+                    {%- endif -%}
+                  {%- endfor -%}
+                {%- endfor -%}
+              {%- endif -%}
+            {%- endfor -%}
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</product-card>

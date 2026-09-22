@@ -1,0 +1,155 @@
+{% doc %}
+  Renders the header menu drawer for mobile navigation with toggle button,
+  slide-in panel, nested navigation, and optional localization and account link.
+
+  @param {linklist} menu - Menu object used by nested nav dropdown
+  @param {string} menu_color_scheme - Color scheme handle for menu background
+  @param {boolean} enable_country_selector - Whether to show country selector
+  @param {boolean} enable_language_selector - Whether to show language selector
+  @param {boolean} enable_customer_avatar - Whether to show account icon link
+
+  @example
+  {% render 'component-nav-drawer',
+    menu: section.settings.menu,
+    menu_color_scheme: section.settings.menu_color_scheme,
+    enable_country_selector: section.settings.enable_country_selector,
+    enable_language_selector: section.settings.enable_language_selector,
+    enable_customer_avatar: section.settings.enable_customer_avatar
+  %}
+{% enddoc %}
+{% stylesheet %}
+  #menu-drawer {
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 0;
+    width: min(500px, 100%);
+    height: calc(100vh - var(--header-height) - var(--announcement-bar-height, 0px));
+    transform: translateX(-100%);
+    z-index: -1;
+    transition: 300ms ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-right: 1px solid rgb(var(--color-foreground),.2);
+  }
+  
+  .header-sticky #menu-drawer {
+    height: calc(100vh - var(--header-height));
+  }
+  #header-drawer #menu-drawer.drawer-open {
+    transform: translateX(0);
+  }
+  #main-header .header-drawer_icons svg {
+    width: 20px;
+  }
+  #header-drawer .header__menu-item--grandchild span,
+  #header-drawer .header__menu-item--child span{
+    display: inline-block;
+    padding-left: 15px;
+  }
+  #header-drawer .header-drawer_icons.drawer-open svg.icon-menu,
+  #header-drawer .header-drawer_icons:not(.drawer-open) svg.icon-close {
+    display: none;
+  }
+  #menu-drawer ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  #menu-drawer li {
+    width: 100%;
+    overflow: hidden;
+  }
+  #menu-drawer a,
+  #menu-drawer .menu-toggle {
+    display: flex;
+    gap: 10px;
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgb(var(--color-foreground), 0.2);
+    text-decoration: none;
+    width: 100%;
+    color: rgba(var(--color-foreground), 0.75);
+  }
+  #menu-drawer a:hover {
+    color: rgb(var(--color-foreground));
+  }
+  .menu-drawer_action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: 1px solid rgb(var(--color-foreground), 0.2);
+    padding: 15px 20px;
+  }
+  .menu-drawer_action a {
+    border: 0 !important;
+    justify-content: flex-end;
+  }
+  .menu-drawer_localization {
+    display: flex;
+  }
+  .menu-drawer_localization .localization-wrapper {
+    position: relative;
+    padding: 12px 6px;
+    border: 1px solid rgb(var(--color-foreground), 0.2);
+    margin-right: 10px;
+  }
+  .menu-drawer_localization .localization-list {
+    top: unset;
+    left: -1px;
+    bottom: 100%;
+    width: 100%;
+    box-shadow: none;
+    border: 1px solid rgb(var(--color-foreground), 0.2);
+  }
+  .menu-drawer_account svg {
+    max-width: 25px;
+    min-width: 25px;
+    height: 25px;
+  }
+{% endstylesheet %}
+<div
+  id="header-drawer"
+  x-data="{ drawerOpen: false }"
+  @click.outside="drawerOpen = false"
+>
+  <button
+    class="header-drawer_icons"
+    @click="drawerOpen = !drawerOpen"
+    :class="{ 'drawer-open': drawerOpen }"
+  >
+    {{- 'icon-menu.svg' | inline_asset_content -}}
+    {{- 'icon-close.svg' | inline_asset_content -}}
+  </button>
+  <div
+    id="menu-drawer"
+    class="color-{{ menu_color_scheme }} gradient"
+    :class="{ 'drawer-open': drawerOpen }"
+  >
+    {% render 'component-nav-dropdown', nav_style: 'drawer', menu: menu, menu_color_scheme: menu_color_scheme %}
+
+    <div class="menu-drawer_action">
+      {% if enable_country_selector or enable_language_selector %}
+        <div class="menu-drawer_localization">
+          {%- render 'component-localization-form',
+            enable_country_selector: enable_country_selector,
+            enable_language_selector: enable_language_selector,
+            menu_color_scheme: menu_color_scheme
+          -%}
+        </div>
+      {% endif %}
+
+      {% if shop.customer_accounts_enabled and enable_customer_avatar %}
+        <a
+          href="{% if customer %}{{ routes.account_url }}{% else %}{{ routes.account_login_url }}{% endif %}"
+          rel="nofollow"
+          class="menu-drawer_account"
+        >
+          {{ 'icon-account.svg' | inline_asset_content }}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>

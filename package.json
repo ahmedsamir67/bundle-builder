@@ -1,0 +1,19 @@
+{
+  "name": "base-theme",
+  "version": "1.0.0",
+  "description": "EcomExperts Base Theme — the Shopify theme every client build is forked from.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "git config core.hooksPath .githooks"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@shopify/eslint-plugin": "^42.1.0",
+    "@shopify/prettier-plugin-liquid": "^1.5.2",
+    "eslint": "^8.45.0",
+    "prettier": "^3.3.3"
+  }
+}

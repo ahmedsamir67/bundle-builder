@@ -1,0 +1,77 @@
+{% comment %}
+  Renders a set of links for paginated results. Must be used within paginate tags.
+
+  Usage:
+  {% paginate results by 2 %}
+    {% render 'component-pagination', paginate: paginate, anchor: '#yourID' %}
+  {% endpaginate %}
+
+  Accepts:
+  - paginate: {Object}
+  - anchor: {String} (optional) This can be added so that on page reload it takes you to wherever you've placed your anchor tag.
+{% endcomment %}
+
+<div class="pagination pagination-wrapper">
+  <ul class="pagination__list">
+    {%- if paginate.parts.size > 0 -%}
+      {%- if paginate.previous -%}
+        <li>
+          <a
+            href="{{ paginate.previous.url }}{{ anchor }}"
+            class="pagination__item pagination__item--previous pagination__item-arrow"
+            data-render-section-url="{{ paginate.previous.url }}"
+            aria-label="{{ 'general.pagination.previous' | t }}"
+          >
+            <span class="svg-wrapper">{{ 'icon-caret.svg' | inline_asset_content }}</span>
+          </a>
+        </li>
+      {%- endif -%}
+
+      {%- for part in paginate.parts -%}
+        {%- if part.is_link -%}
+          <li>
+            <a
+              href="{{ part.url }}{{ anchor }}"
+              class="pagination__item"
+              data-render-section-url="{{ part.url }}"
+              aria-label="{{ 'general.pagination.page' | t: number: part.title }}"
+            >
+              {{- part.title -}}
+            </a>
+          </li>
+        {%- else -%}
+          {%- if part.title == paginate.current_page -%}
+            <li>
+              <a
+                class="pagination__item pagination__item--current"
+                role="link"
+                aria-disabled="true"
+                aria-current="page"
+                aria-label="{{ 'general.pagination.page' | t: number: part.title }}"
+              >
+                {{- part.title -}}
+              </a>
+            </li>
+          {%- else -%}
+            <li>
+              <span class="pagination__item">{{ part.title }}</span>
+            </li>
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+
+      {%- if paginate.next -%}
+        <li>
+          <a
+            href="{{ paginate.next.url }}{{ anchor }}"
+            class="pagination__item pagination__item--next pagination__item-arrow"
+            data-render-section-url="{{ paginate.next.url }}"
+            aria-label="{{ 'general.pagination.next' | t }}"
+          >
+            <span class="svg-wrapper"> {{ 'icon-caret.svg' | inline_asset_content }}</span>
+          </a>
+        </li>
+      {%- endif -%}
+    {%- endif -%}
+  </ul>
+</div>

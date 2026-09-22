@@ -1,0 +1,233 @@
+{%- style -%}
+  /* PRICE RANGE FILTER STYLING */
+
+  .price-input-container {
+    width: 100%;
+  }
+
+  .price-input .price-field {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .price-field input{
+    width: 65px;
+  }
+  .price-field label {
+    height: 36px;
+    padding: 3px;
+    font-size: 16px;
+    border-radius: 3px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    background: transparent;
+    width: 70px;
+    color: #707070;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .price-field input,
+  .price-field span {
+    color: #707070;
+  }
+
+  .price-field input, .price-field span {
+    border: none;
+    box-shadow: none;
+  }
+
+  .price-field input:focus, .price-field span:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .price-input {
+    width: 100%;
+    font-size: 14px;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .slider-container {
+    width: 100%;
+  }
+
+  .slider-container {
+    height: 4px;
+    position: relative;
+    background: #e4e4e4;
+    border-radius: 5px;
+  }
+
+  .slider-container .price-slider {
+    height: 100%;
+    left: 0%;
+    right: 0%;
+    position: absolute;
+    border-radius: 5px;
+    background: #000;
+    display: block;
+  }
+
+  .range-input {
+    position: relative;
+  }
+
+  .range-input input {
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: none;
+    top: 0px;
+    left: 0px;
+    pointer-events: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    z-index: 2;
+  }
+
+  /* Styles for the range thumb in WebKit browsers */
+  input[type='range']::-webkit-slider-thumb {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    background: black;
+    pointer-events: auto;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  /* Styles for the range thumb in Firefox */
+  input[type='range']::-moz-range-thumb {
+    height: 10px;
+    width: 10px;
+    border-radius: 50%;
+    background: black;
+    pointer-events: auto;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Styles for the range track in Firefox */
+  input[type='range']::-moz-range-track {
+    height: 4px;
+    background: transparent;
+    border: none;
+  }
+
+  .price-range-main {
+    padding-block: 20px;
+  }
+  @media screen and (max-width: 768px) {
+    .projtitle {
+      width: 100%;
+      position: relative;
+      right: 26px;
+    }
+
+    .price-input {
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .price-field {
+      margin-bottom: 10px;
+    }
+  }
+
+  /*====================================
+  END OF PRICE RANGE FILTER STYLING
+  ======================================*/
+{%- endstyle -%}
+
+<price-range>
+  <div class="price-range-main" currency-symbol="{{ cart.currency.symbol }}">
+    <div class="price-range-subcontainer">
+      <div class="range-input">
+        <input
+          type="range"
+          class="min-range"
+          min="0"
+          max="{{ filter.range_max | divided_by: 100 }}"
+          {%- if filter.min_value.value -%}
+            value="{{ filter.min_value.value | divided_by: 100 }}"
+          {%- else -%}
+            value="0"
+          {%- endif -%}
+          step="1"
+          name="{{ filter.min_value.param_name }}"
+          data-render-section
+        >
+        <input
+          type="range"
+          class="max-range"
+          min="0"
+          max="{{ filter.range_max | divided_by: 100 }}"
+          {%- if filter.max_value.value -%}
+            value="{{ filter.max_value.value | divided_by: 100 }}"
+          {%- else -%}
+            value="{{ filter.range_max | divided_by: 100 }}"
+          {%- endif -%}
+          step="1"
+          name="{{ filter.max_value.param_name }}"
+          data-render-section
+        >
+      </div>
+      <div class="price-input-container">
+        <div class="slider-container">
+          <div class="price-slider"></div>
+        </div>
+        <div class="price-input">
+          <div class="price-field">
+            <span>From</span>
+            <label>
+              <span class="currency-symbol">{{ cart.currency.symbol }}</span>
+              <input
+                type="number"
+                class="min-number"
+                min="0"
+                max="{{ filter.range_max | divided_by: 100 }}"
+                {%- if filter.min_value.value -%}
+                  value="{{ filter.min_value.value | divided_by: 100 }}"
+                {%- else -%}
+                  value="0"
+                {%- endif -%}
+                step="1"
+                data-render-section
+              >
+            </label>
+          </div>
+          <div class="price-field">
+            <span>To</span>
+            <label>
+              <span class="currency-symbol">{{ cart.currency.symbol }}</span>
+              <input
+                type="number"
+                class="max-number"
+                min="0"
+                max="{{ filter.range_max | divided_by: 100 }}"
+                {%- if filter.max_value.value -%}
+                  value="{{ filter.max_value.value | divided_by: 100 }}"
+                {%- else -%}
+                  value="{{ filter.range_max | divided_by: 100 }}"
+                {%- endif -%}
+                step="1"
+                data-render-section
+              >
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</price-range>

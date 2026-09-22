@@ -1,0 +1,424 @@
+/* sections/featured-products.liquid */
+
+.featured-products-section {
+  display: block;
+  width: 100%;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  background-color: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+}
+
+featured-products {
+  display: block;
+  width: 100%;
+}
+
+.featured-products__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  /* Allow wrapping on smaller screens */
+  gap: 1rem;
+  /* Add gap for wrapping */
+}
+
+.featured-products-content {
+  position: relative;
+  padding-top: 8rem;
+  padding-bottom: 3rem;
+  width: 95%;
+}
+
+.featured-products__titles {
+  flex-grow: 1;
+  /* Allow titles to take available space */
+}
+
+/* Heading alignment classes */
+.featured-products__titles--left {
+  text-align: left;
+}
+
+.featured-products__titles--center {
+  text-align: center;
+}
+
+.featured-products__titles--right {
+  text-align: right;
+}
+
+.featured-products__heading {
+  margin-bottom: 0.5rem;
+  /* Adjust spacing */
+  font-size: 3.6rem;
+  /* Example size */
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 0;
+  /* Assuming H2 style from base.css is sufficient */
+}
+
+.featured-products__subheading {
+  margin-top: 0;
+  margin-bottom: 0;
+  /* Remove bottom margin */
+  font-size: 1rem;
+  /* Example size */
+  color: #000000;
+  /* Make subheading black */
+  font-style: italic;
+  /* Make subheading italic */
+}
+
+.featured-products__view-all {
+  white-space: nowrap;
+  /* Prevent wrap */
+  font-weight: bold;
+  /* Use link styles from base.css */
+}
+
+.featured-products__button-wrapper {
+  text-align: center;
+  margin-top: 7rem;
+}
+
+.featured-products__view-all-button {
+  display: inline-block;
+  padding: 18px 30px;
+  background-color: var(--button-bg-color, #000);
+  color: var(--button-text-color, #fff);
+  text-decoration: none;
+  font-weight: bold;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 100%;
+  max-width: 211px;
+}
+
+.featured-products__view-all-button:hover {
+  background-color: var(--button-bg-color, #000);
+  opacity: 0.8;
+  transform: translateY(-2px);
+  color: var(--button-text-color, #fff);
+  text-decoration: none;
+}
+
+.featured-products__grid {
+  /* Inherit display: flex and gap from .grid in base.css */
+  /* The column classes grid--4-col-desktop etc. are handled by base.css */
+  margin: 0;
+  /* Remove default grid margin if any */
+  padding: 0;
+  /* Remove default grid padding if any */
+}
+
+.featured-products__card.grid__item {
+  /* Let base.css handle the width calculations */
+  /* e.g., width: calc(25% - 2rem * 3 / 4); */
+  max-width: none;
+  /* Override base.css potentially limiting max-width */
+}
+
+.product-card {
+  text-align: left;
+  /* Align text to the left */
+  position: relative;
+  /* Needed for badge positioning */
+  /* Ensure card takes full height of grid item */
+  display: flex;
+  /* Allow inner content to flex */
+  flex-direction: column;
+}
+
+.product-card__link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card__image-wrapper {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  /* Space between image and info */
+  aspect-ratio: 1 / 1.2;
+  /* Adjust aspect ratio as needed */
+  background-color: #f5f5f5;
+  /* Placeholder background */
+}
+
+.product-card__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-card__badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: #ffc107;
+  /* Example gold color from image */
+  color: #000;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border-radius: 3px;
+  line-height: 1.2;
+  /* Adjust line height */
+}
+
+.product-card__info {
+  padding: 0 0.5rem;
+  margin-top: auto;
+  z-index: 2;
+}
+
+/* Product content alignment classes */
+.product-card__info--left {
+  text-align: left;
+}
+
+.product-card__info--center {
+  text-align: center;
+}
+
+.product-card__info--right {
+  text-align: right;
+}
+
+.product-card__title {
+  font-size: 1.8rem;
+  margin-top: 0;
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+.product-card__reviews {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Review content alignment classes */
+.product-card__reviews--left {
+  justify-content: flex-start;
+}
+
+.product-card__reviews--center {
+  justify-content: center;
+}
+
+.product-card__reviews--right {
+  justify-content: flex-end;
+}
+
+.product-card__stars {
+  /* Star rating color */
+  line-height: 1;
+  /* Adjust line height for stars */
+}
+
+.product-card__review-link {
+  text-decoration: none;
+  /* Remove default underline if needed */
+  color: rgba(var(--color-foreground), 0.75);
+  /* Use existing theme variable/opacity */
+  font-size: 1.4rem;
+  font-weight: 400;
+}
+
+.product-card__review-link:hover {
+  text-decoration: underline;
+  /* Add underline on hover like base links */
+  color: rgb(var(--color-link));
+  /* Use theme link hover color */
+}
+
+.product-card__review-count {
+  font-weight: bold;
+  /* Make review count bold */
+  /* Inherits color from parent link */
+}
+
+.product-card__price {
+  font-size: 1.8rem;
+  /* Doubled font size */
+  font-weight: bold;
+}
+
+.product-card__price .price__regular {
+  color: #262626;
+  font-size: 1.8rem;
+  font-weight: 400;
+}
+
+.price--on-sale {
+  color: #d9534f;
+  /* Fallback sale color (Bootstrap red) - Adjust if theme has a variable */
+  /* This overrides the black color only when on sale */
+}
+
+.price__compare-at {
+  text-decoration: line-through;
+  font-weight: normal;
+  color: rgba(var(--color-foreground), 0.75);
+  /* Use existing theme variable/opacity */
+  margin-left: 0;
+  /* Removed left margin */
+  margin-right: 0.5rem;
+  /* Added right margin */
+  font-size: 0.8em;
+  /* Made smaller */
+}
+
+.placeholder-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Swiper layout and navigation fixes */
+.featured-products__swiper {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 2rem;
+  /* space for arrows */
+}
+
+.swiper-wrapper {
+  align-items: stretch;
+}
+
+.featured-products__card.swiper-slide {
+  border-radius: 8px;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: auto;
+}
+
+.featured-products__swiper .swiper-button-prev:after,
+.featured-products__swiper .swiper-button-next:after {
+  display: none;
+}
+
+.featured-products__swiper-arrows {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.featured-products__swiper {
+  position: unset !important;
+}
+
+.featured-products__swiper-arrows .swiper-button-prev,
+.featured-products__swiper-arrows .swiper-button-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: auto;
+  border-radius: 100%;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #c0bcbc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.featured-products__swiper-arrows .swiper-button-prev {
+  left: -20px;
+}
+
+.featured-products__swiper-arrows .swiper-button-next {
+  right: -20px;
+}
+
+/* Hide Swiper's default arrow icons completely */
+.swiper-button-prev:after,
+.swiper-button-next:after {
+  display: none;
+}
+
+@media (max-width: 750px) {
+  .featured-products-content {
+    width: 100%;
+    padding-top: 6rem;
+  }
+
+  .featured-products__view-all-button {
+    width: 100%;
+    max-width: 175px;
+  }
+
+  .placeholder-svg {
+    width: 100%;
+    height: 237px;
+    max-width: 211px;
+  }
+
+  .featured-products__button-wrapper {
+    margin-top: 30px;
+  }
+
+  .exclusive-section {
+    margin: 40px auto !important;
+  }
+
+  .btn-login {
+    max-width: 255px;
+    width: 100%;
+  }
+
+  .featured-products__swiper {
+    padding: 0 0.5rem;
+  }
+
+  .featured-products__heading {
+    font-size: 2.4rem;
+  }
+
+  .featured-products__card.swiper-slide {
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .featured-products__swiper-arrows .swiper-button-prev,
+  .featured-products__swiper-arrows .swiper-button-next {
+    width: 40px;
+    height: 40px;
+    border-width: 1.5px;
+    font-size: 1.5rem;
+  }
+
+  .featured-products__swiper-arrows .swiper-button-prev {
+    left: 0;
+  }
+
+  .featured-products__swiper-arrows .swiper-button-next {
+    right: 0;
+  }
+
+  .featured-products__swiper-arrows {
+    display: none;
+  }
+}

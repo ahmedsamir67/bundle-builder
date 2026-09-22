@@ -1,0 +1,272 @@
+---
+description: Liquid syntax standards
+paths:
+  - "**/*.liquid"
+---
+
+# Liquid Syntax Standards
+
+## Valid Tags with Parameters
+
+**Control Flow:**
+
+- `if condition` / `endif` - Conditional logic
+- `unless condition` / `endunless` - Negative conditional
+- `case variable` / `when value` / `endcase` - Switch statement
+- `for item in array` / `endfor` - Loop with optional `limit:`, `offset:`
+
+**Variable Assignment:**
+
+- `assign variable = value` - Create variable
+- `capture variable` / `endcapture` - Capture output
+- `increment variable` - Add 1 to counter
+- `decrement variable` - Subtract 1 from counter
+
+**Template Inclusion:**
+
+- `render 'snippet-name'` - Include snippet
+- `render 'snippet-name', param: value` - With parameters
+- `section 'section-name'` - Include section
+
+**Forms:**
+
+- `form 'cart'` / `endform` - Cart form
+- `form 'product'` / `endform` - Product form
+- `form 'customer_login'` / `endform` - Login form
+
+**Other:**
+
+- `paginate collection.products by 12` / `endpaginate` - Paginate results
+- `liquid` / `endliquid` - Multiline Liquid block
+- `comment` / `endcomment` - Block comments
+- `raw` / `endraw` - Output without processing
+
+## Valid Filters
+
+**Array Filters:**
+
+- `compact` - Remove nil values: `array | compact`
+- `concat` - Join arrays: `array | concat: array`
+- `find` - Find object: `array | find: property, value`
+- `where` - Filter objects: `array | where: property, value`
+- `map` - Extract property: `array | map: property`
+- `sort` - Sort array: `array | sort`
+- `reverse` - Reverse order: `array | reverse`
+- `first` - First item: `array | first`
+- `last` - Last item: `array | last`
+- `size` - Count items: `array | size`
+
+**String Filters:**
+
+- `escape` - HTML escape: `string | escape`
+- `truncate` - Limit length: `string | truncate: 150`
+- `handleize` - URL handle: `string | handleize`
+- `replace` - Replace text: `string | replace: 'old', 'new'`
+- `split` - Split string: `string | split: 'delimiter'`
+- `upcase` - Uppercase: `string | upcase`
+- `downcase` - Lowercase: `string | downcase`
+- `capitalize` - Capitalize: `string | capitalize`
+
+**Money Filters:**
+
+- `money` - Format price: `price | money`
+- `money_with_currency` - With symbol: `price | money_with_currency`
+- `money_without_currency` - No symbol: `price | money_without_currency`
+
+**Media Filters:**
+
+- `image_url` - Responsive image: `image | image_url: width: 800`
+- `image_tag` - Complete img tag: `image | image_tag`
+- `asset_url` - Theme asset: `'style.css' | asset_url`
+
+## Syntax Rules
+
+- Use `{% liquid %}` for multiline code blocks
+- Use `{% # comment %}` for inline comments
+- Never invent new filters, tags, or objects
+- Follow proper tag closing order (last opened, first closed)
+- Use object dot notation: `product.title` not `product['title']`
+- Respect object scope and availability
+
+## Traps
+
+### A literal `{{ }}` cannot be passed as a filter argument
+
+Liquid closes an output tag at the **first** `}}` it meets. It does not know
+the inner braces were meant to be literal, so this does not parse:
+
+```liquid
+{% comment %} BROKEN — the tag closes at the inner }} {% endcomment %}
+{{ 'products.price_each' | t: price: '{{price}}' }}
+```
+
+The parser reads `{{ 'products.price_each' | t: price: '{{price`, closes there,
+and emits the trailing `' }}` as visible text. There is no escaping form that
+fixes it inline — the brace pair has to reach the filter as an already-built
+string.
+
+Build it with `capture` and `raw`:
+
+```liquid
+{%- capture price_token %}{% raw %}{{price}}{% endraw %}{% endcapture -%}
+{{ 'products.price_each' | t: price: price_token }}
+```
+
+This comes up whenever a translated string is handed to JavaScript as a
+template — a placeholder the client-side code substitutes later. Found on the
+BPN Quick-Shop build, where the bundle-picker snippet still carries the
+broken form.
+
+### Filters are not applied to `{% render %}` arguments
+
+The filter is **silently ignored** and the snippet receives the unfiltered
+value. Nothing errors, which is what makes it expensive:
+
+```liquid
+{% comment %} BROKEN — the snippet gets the raw drop, not the HTML {% endcomment %}
+{% render 'component-answer', answer: item.answer | metafield_tag %}
+
+{% comment %} Correct — filter first, then pass the result {% endcomment %}
+{%- assign answer_html = item.answer | metafield_tag -%}
+{% render 'component-answer', answer: answer_html %}
+```
+
+This is the one standing exception to the "Inline Variables Pattern" below: a
+filtered value destined for a `render` argument **has** to be assigned first.
+
+Theme Check catches this one as `UnsupportedFilterArguments`, so a full
+`shopify theme check` run will find it — but only if the file is in scope, which
+is why it survived in a client theme for months.
+
+### A rich text metafield does not print as HTML
+
+`rich_text_field` stores a JSON AST. Outputting the field renders that JSON as
+visible text on the page, and `.value` hands back the same tree as an object.
+`metafield_tag` is the filter that produces markup:
+
+```liquid
+{{ item.answer }}                     {% comment %} {"type":"root",…} on the page {% endcomment %}
+{{ item.answer.value }}               {% comment %} same tree, as an object {% endcomment %}
+{{ item.answer | metafield_tag }}     {% comment %} <div class="metafield-rich_text_field"><p>…</p></div> {% endcomment %}
+```
+
+It brings its own wrapper element, so any CSS targeting the flow children of the
+field has to reach one level deeper than it would for a `richtext` **setting**,
+which is already HTML and needs no filter. Mixing the two up is easy: a schema
+`richtext` setting and a `rich_text_field` metafield look identical in the
+editor and behave differently in Liquid.
+
+### Array filters cannot reach a nested property on a metaobject
+
+`sort`, `sort_natural`, `map` and `where` all take a property name, and all four
+fail quietly on a dotted path into a metaobject's `system`:
+
+| Attempt | Result |
+|---|---|
+| `entries \| sort: 'system.id'` | no-op — order unchanged |
+| `entries \| sort_natural: 'system.id'` | no-op — order unchanged |
+| `entries \| map: 'system.id'` | an array of empties |
+| `entries \| where: 'system.handle', h` | matches nothing |
+
+To order metaobject entries on a field the filters cannot reach, you therefore
+build the sort key by hand — append `key:handle` pairs into a string, `split` it
+into a real array of strings, `sort` that, then match each handle back with an
+inner loop. If the key is numeric, **zero-pad it** so a string sort is also a
+numeric one.
+
+**Sort on a field the merchant controls.** Add an explicit `order` (integer) or
+`date` field to the metaobject definition and sort on that. `metaobject.system`
+exposes only `handle`, `id`, `type` and `url` — there is **no `created_at`** —
+and while ids have been observed to increase with creation, that is not
+documented behaviour and nothing guarantees it. If a definition has no such
+field and you fall back to `system.id`, say so in a Liquid comment and in the
+handoff, so the merchant knows adding an entry may not place it where they
+expect.
+
+### `.first` does not work on `shop.metaobjects.<type>.values`
+
+It iterates correctly in a `for` loop, but `.first` returns blank, and so does
+anything chained off it. Use `for … limit: 1` to take one entry.
+
+Note also that `shop.metaobjects` is documented as replaced by `metaobjects`,
+and that the paginated form (`{% paginate shop.metaobjects.<type>.values by 250 %}`)
+and the bare form behave differently once a type holds more entries than a
+single page. If a section says "leave empty to list every entry", check which
+form it uses before believing it.
+
+## Inline Variables Pattern
+
+For props that are relatively straightforward, prefer to inline the liquid instead of declaring extra variables. In smaller components it doesn't make a big difference, but in bigger ones it helps not having to scroll up and down to know what is being applied where.
+
+**✅ Do this (inline approach):**
+
+```liquid
+<div
+  class='component component--{{ settings.style_modifier }}'
+  style='
+    color: {{ settings.text_color }};
+    {% if settings.show_border %}
+      border: 1px solid {{ settings.border_color }};
+    {% endif %}
+  '
+>
+  <h2>{{ 'sections.component.title' | t }}</h2>
+
+  {{ content | truncate: settings.max_length | default: 200 }}
+
+  <a
+    href='{{ link_url }}'
+    class='link--{{ settings.link_style | default: 'primary' }}'
+  >
+    {{ 'general.read_more' | t }}
+  </a>
+</div>
+```
+
+**❌ Don't do this (variable declaration approach):**
+
+```liquid
+{% liquid
+  assign component_class = 'component component--' | append: settings.style_modifier
+  assign text_color = settings.text_color
+  assign truncate_length = settings.max_length | default: 200
+  assign link_class = 'link--' | append: settings.link_style | default: 'primary'
+%}
+
+{% capture component_style %}
+  color: {{ text_color }};
+  {% if settings.show_border %}
+    border: 1px solid {{ settings.border_color }};
+  {% endif %}
+{% endcapture %}
+
+<div
+  class='{{ component_class }}'
+  style='{{ component_style }}'
+>
+  <h2>{{ 'sections.component.title' | t }}</h2>
+
+  {{ content | truncate: truncate_length }}
+
+  <a
+    href='{{ link_url }}'
+    class='{{ link_class }}'
+  >
+    {{ 'general.read_more' | t }}
+  </a>
+</div>
+```
+
+**Exceptions:**
+
+- When Liquid filter parameters require string values and complex logic cannot be inlined
+- When the same complex calculation is used multiple times
+- When the logic is extremely complex and would harm readability
+- When you need to build a string incrementally with conditional parts
+
+**Benefits:**
+
+- Easier to understand what's being applied where
+- No need to scroll up and down to find variable definitions
+- Reduces cognitive load in larger components
+- Makes the code more maintainable

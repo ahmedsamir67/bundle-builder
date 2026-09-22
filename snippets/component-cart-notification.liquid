@@ -1,0 +1,188 @@
+{% doc %}
+  Renders an add-to-cart notification panel with product summary, actions, and
+  links to cart/checkout. Uses a color scheme and adapts layout to header type.
+
+  @param {string} [color_scheme] - Optional color scheme handle for the wrapper
+  @param {string} [desktop_menu_type] - If not 'drawer', uses page-width wrapper
+
+  @example
+  {% render 'component-cart-notification', color_scheme: 'primary' %}
+{% enddoc %}
+{% stylesheet %}
+  .cart-notification-wrapper {
+    position: relative;
+    display: block;
+  }
+  .cart-notification:not(.cart-notification-open) {
+    display: none;
+  }
+  .cart-notification {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    border: 1px solid rgba(var(--color-foreground), 0.2);
+    box-shadow: 0 4px 10px rgba(var(--color-shadow), 0.1);
+    padding: 1.5rem 2rem;
+    max-width: 350px;
+    box-sizing: border-box;
+    transform: translateY(-100%);
+    visibility: hidden;
+  }
+  .cart-notification.cart-notification-open {
+    transform: translateY(0);
+    transition: transform 200ms ease, visibility 0s;
+    visibility: visible;
+  }
+  .cart-notification__header {
+    display: flex;
+    justify-content: space-between;
+  }
+  .cart-notification__heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 14px;
+    font-weight: normal;
+    margin: 0;
+  }
+  .cart-notification__heading svg {
+    width: 15px;
+    height: auto;
+  }
+  button.cart-notification__close {
+    background: transparent;
+    border: 0;
+    margin-top: -1rem;
+    margin-right: -1.5rem;
+    cursor: pointer;
+  }
+  .cart-notification-product {
+    align-items: flex-start;
+    display: flex;
+    padding-block: 2rem;
+  }
+
+  .cart-notification-product dl {
+    margin-block: 0;
+  }
+
+  .cart-notification-product__image {
+    display: inline-flex;
+    margin-right: 1rem;
+  }
+  .caption-with-letter-spacing {
+    font-size: 10px;
+    letter-spacing: 0.05rem;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-top: 0;
+  }
+  .cart-notification-product__name {
+    font-size: 15px;
+    font-weight: normal;
+    margin-block: 0 10px;
+    line-height: 1.35;
+  }
+  .cart-notification .product-option {
+    font-size: 14px;
+    word-break: break-word;
+    line-height: 1.2;
+    margin-top: 4px;
+  }
+  .cart-notification .product-option * {
+    display: inline;
+    margin: 0;
+  }
+  .cart-notification-button,
+  #cart-notification-form button {
+    display: block;
+    width: 100%;
+    padding: 12px 18px;
+    text-decoration: none;
+    text-align: center;
+    font-weight: 400;
+    margin: 0 auto 10px;
+    border: 1px solid rgb(var(--color-button));
+    background: transparent;
+    color: rgb(var(--color-button));
+    font-size: 14px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    box-sizing: border-box;
+  }
+  #cart-notification-form button {
+    border: 1px solid rgb(var(--color-button));
+    background: rgb(var(--color-button));
+    color: rgb(var(--color-button-text));
+  }
+  .cart-notification-continue_shopping {
+    background: transparent;
+    border: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 0.1em;
+    text-align: center;
+    width: 100%;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  @media screen and (min-width: 769px) {
+    .cart-notification {
+      right: 20px;
+    }
+  }
+  @media screen and (max-width: 768px) {
+    .cart-notification {
+      width: 100%;
+      max-width: 100%;
+    }
+  }
+{% endstylesheet %}
+
+<cart-notification class="cart-notification-wrapper{% if desktop_menu_type != 'drawer' %} page-width{% endif %}">
+  <div
+    id="cart-notification"
+    class="cart-notification {% if color_scheme %} color-{{ color_scheme }} gradient{% endif %}"
+    aria-modal="true"
+    aria-label="{{ 'general.cart.item_added' | t }}"
+    role="dialog"
+    tabindex="-1"
+  >
+    <div class="cart-notification__header">
+      <h2 class="cart-notification__heading">
+        {{- 'icon-checkmark.svg' | inline_asset_content -}}
+        {{ 'general.cart.item_added' | t }}
+      </h2>
+      <button
+        type="button"
+        class="cart-notification__close"
+        aria-label="{{ 'accessibility.close' | t }}"
+      >
+        {{- 'icon-close.svg' | inline_asset_content -}}
+      </button>
+    </div>
+    <div id="cart-notification-product" class="cart-notification-product"></div>
+    <div class="cart-notification__links">
+      <a
+        href="{{ routes.cart_url }}"
+        class="cart-notification-button"
+      >
+        {{ 'general.cart.view_empty_cart' | t }} (<span
+          data-cart-count
+          id="cart-notification-count"
+        ></span
+        >)
+      </a>
+      <form action="{{ routes.cart_url }}" method="post" id="cart-notification-form">
+        <button name="checkout">
+          {{ 'sections.cart.checkout' | t }}
+        </button>
+      </form>
+      <button class="cart-notification-continue_shopping" type="button">
+        {{ 'general.continue_shopping' | t }}
+      </button>
+    </div>
+  </div>
+</cart-notification>
+<script src="{{ 'component-cart-notification.js' | asset_url }}" type="module"></script>

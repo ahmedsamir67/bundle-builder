@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <meta name="theme-color" content="">
+    <link rel="canonical" href="{{ canonical_url }}">
+    <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
+
+    {% render 'component-gtm-head' %}
+
+    {%- if settings.favicon != blank -%}
+      <link rel="icon" type="image/png" href="{{ settings.favicon | image_url: width: 32, height: 32 }}">
+    {%- endif -%}
+
+    {%- unless settings.type_body_font.system? -%}
+      <link rel="preconnect" href="https://fonts.shopifycdn.com" crossorigin>
+    {%- endunless -%}
+    {%- unless settings.type_heading_font.system? -%}
+      <link rel="preconnect" href="https://fonts.shopifycdn.com" crossorigin>
+    {%- endunless -%}
+
+    {% # Inlined CSS Variables %}
+    {% render 'css-variables' %}
+
+    {% # Load and preload the critical CSS %}
+    {{ 'critical.css' | asset_url | stylesheet_tag: preload: true }}
+
+    {%- if settings.splash_screen_enabled -%}
+      {% render 'component-splash-screen-head' %}
+    {%- endif -%}
+
+    {% if page_description %}
+      <meta name="description" content="{{ page_description | escape }}">
+    {% endif %}
+
+    {% # Social, title, etc. %}
+    {% render 'meta-tags' %}
+
+    {{ content_for_header }}
+    {% comment %} Load Swiper if on collection, product, index, search or page templates {% endcomment %}
+    {% if template.name == 'collection' or template.name == 'product' or template.name == 'index' or template.name == 'page' or template.name == 'search' %}
+      {{ 'swiper7.4.1.min.css' | asset_url | stylesheet_tag }}
+      <script src="{{ 'swiper7.4.1.min.js' | asset_url }}" defer="defer"></script>
+    {% endif %}
+
+    <script src="{{ 'alpinejs-persist@3.14.8.min.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'alpinejs@3.14.8.min.js' | asset_url }}" defer="defer"></script>
+    <script src="{{ 'theme.js' | asset_url }}" type="module"></script>
+
+    <script type="application/json" id="cart-data">
+      {{ cart | json }}
+    </script>
+    <script src="{{ 'cart.js' | asset_url }}" type="module"></script>
+
+    {%- if settings.predictive_search_enabled -%}
+      {{ 'component-predictive-search.css' | asset_url | stylesheet_tag }}
+    {%- endif -%}
+  </head>
+
+  <body>
+    {% render 'component-gtm-body' %}
+
+    {% render 'component-data-layer' %}
+
+    <a class="skip-to-content-link visually-hidden" href="#MainContent"> Skip to content </a>
+
+    {%- if settings.splash_screen_enabled -%}
+      {% render 'component-splash-screen' %}
+    {%- endif -%}
+
+    {% sections 'header-group' %}
+
+    <main id="MainContent" class="content-for-layout" tabindex="-1">
+      {{ content_for_layout }}
+    </main>
+
+    {% sections 'footer-group' %}
+
+    {%- if settings.predictive_search_enabled -%}
+      <script src="{{ 'component-predictive-search.js' | asset_url }}" type="module"></script>
+    {%- endif -%}
+
+    {%- if settings.splash_screen_enabled -%}
+      <script src="{{ 'component-splash-screen.js' | asset_url }}" type="module"></script>
+    {%- endif -%}
+  </body>
+</html>

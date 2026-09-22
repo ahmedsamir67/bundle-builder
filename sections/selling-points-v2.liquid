@@ -1,0 +1,165 @@
+{% comment %} /sections/selling-points-v2.liquid {% endcomment %}
+
+{{ 'section-selling-points-v2.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'section-selling-points-v2.js' | asset_url }}" type="module"></script>
+
+{%- style -%}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+{%- endstyle -%}
+
+{%- liquid
+  assign blocks_to_show = section.blocks.size
+  assign enable_mobile_slider = section.settings.enable_mobile_slider
+-%}
+
+{%- if blocks_to_show > 0 -%}
+  <selling-points-v2
+    data-section-id="{{ section.id }}"
+    data-enable-mobile-slider="{{ enable_mobile_slider }}"
+    class="color-{{ section.settings.color_scheme }} selling-points-v2-section section-{{ section.id }}-padding"
+  >
+    <div class="page-width">
+      <div
+        id="selling-points-v2-{{ section.id }}"
+        class="selling-points-v2__container {% if enable_mobile_slider %}selling-points-v2__container--slider{% endif %}"
+      >
+        <div class="selling-points-v2__grid swiper-wrapper">
+          {%- for block in section.blocks -%}
+            {%- assign title = block.settings.title -%}
+            {%- assign description = block.settings.description -%}
+            {%- assign link_url = block.settings.link_url -%}
+
+            <div class="selling-points-v2__item swiper-slide" {{ block.shopify_attributes }}>
+              {%- if link_url != blank -%}
+                <a href="{{ link_url }}" class="selling-points-v2__content selling-points-v2__content--link">
+              {%- else -%}
+                <div class="selling-points-v2__content">
+              {%- endif -%}
+                {%- if title != blank -%}
+                  <h3 class="selling-points-v2__title">{{ title | escape }}</h3>
+                {%- endif -%}
+
+                {%- if description != blank -%}
+                  <p class="selling-points-v2__description">{{ description | escape }}</p>
+                {%- endif -%}
+
+                <div class="selling-points-v2__icon-wrapper">
+                  <span class="selling-points-v2__icon">
+                    {{ 'icon-details.svg' | inline_asset_content }}
+                  </span>
+                </div>
+              {%- if link_url != blank -%}
+                </a>
+              {%- else -%}
+                </div>
+              {%- endif -%}
+            </div>
+          {%- endfor -%}
+        </div>
+
+        {%- if enable_mobile_slider -%}
+          <div class="selling-points-v2__pagination swiper-pagination"></div>
+        {%- endif -%}
+      </div>
+    </div>
+  </selling-points-v2>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Selling Points V2",
+  "tag": "section",
+  "class": "selling-points-v2",
+  "settings": [
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:sections.all.colors.label",
+      "default": "scheme-1"
+    },
+    {
+      "type": "header",
+      "content": "Spacing Settings"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding Top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Padding Bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "header",
+      "content": "Mobile Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_mobile_slider",
+      "label": "Enable Mobile Slider",
+      "default": true,
+      "info": "When enabled, cards will display as a slider on mobile devices. When disabled, cards will stack vertically."
+    }
+  ],
+  "blocks": [
+    {
+      "type": "selling_point",
+      "name": "Selling Point",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Title",
+          "default": "15% OFF FIRST ORDER"
+        },
+        {
+          "type": "textarea",
+          "id": "description",
+          "label": "Description",
+          "default": "Subscribe to our mailing list for 15% off your first order"
+        },
+        {
+          "type": "url",
+          "id": "link_url",
+          "label": "Link URL",
+          "info": "Optional: Add a link to make the entire card clickable"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Selling Points V2",
+      "blocks": [
+        { "type": "selling_point" },
+        { "type": "selling_point" },
+        { "type": "selling_point" },
+        { "type": "selling_point" }
+      ]
+    }
+  ]
+}
+{% endschema %}
+
