@@ -48,6 +48,7 @@
         "brand_information_pLUCGY",
         "text_3D9g6x"
       ],
+      "disabled": true,
       "settings": {
         "color_scheme": "scheme-2",
         "enable_country_selector": true,
