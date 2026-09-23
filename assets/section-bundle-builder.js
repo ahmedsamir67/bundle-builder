@@ -14,18 +14,48 @@
  *
  * State model (ported from D:/Projects/Bundle-Builder/src/state/builder-provider.tsx):
  *   BuilderState = {
+ *     version: number,                  // persisted shape; older payloads are discarded
  *     activeStepIndex: number | null,   // which step is currently open
  *     selections: {
- *       [productId]: {
+ *       [selectionKey]: {               // `${block.id}::${product.id}` — see selectionKeyFor
  *         activeVariantId: string | null,
- *         quantitiesByVariant: { [variantId]: number }
+ *         quantitiesByVariant: { [variantKey]: number }
  *       }
  *     }
  *   }
  *
+ * Selections are keyed by **step + product**, not by product alone. The reference
+ * app gives every product exactly one category; a Shopify product can sit in the
+ * collections of several steps, so a product-only key made one quantity readable
+ * once per step — double-counting the review panel, the totals and the cart.
+ *
+ * Two identifiers are deliberately distinct and must not be substituted for each
+ * other: `variantKey` is the quantity key inside a selection ('default' when the
+ * product has no variants to choose from), while `variantId` is the Shopify
+ * variant id posted to the cart.
+ *
  * Phase 2 registers Liquid-rendered products and keeps active variants and
  * per-variant quantities synchronized with their card controls.
  */
+
+/** Separator between a step's block id and a product id inside a selection key. */
+const SELECTION_KEY_SEPARATOR = '::';
+
+/** Quantity key used by products that expose no variant choice. */
+const DEFAULT_VARIANT_KEY = 'default';
+
+/** Bumped whenever the persisted state shape changes. */
+const STATE_VERSION = 2;
+
+/**
+ * Build the selection key for a product card, scoping it to the step that renders it.
+ * @param {HTMLElement} card
+ * @returns {string}
+ */
+function selectionKeyFor(card) {
+  const blockId = card.closest('bundle-step')?.dataset.blockId ?? '';
+  return `${blockId}${SELECTION_KEY_SEPARATOR}${card.dataset.productId}`;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. <bundle-builder> — root orchestrator
@@ -40,7 +70,7 @@ if (!customElements.get('bundle-builder')) {
     /** @type {number|null} Index of the currently-open step */
     #activeStepIndex = null;
 
-    /** @type {Map<string,Object>} productId → ProductSelection */
+    /** @type {Map<string,Object>} selectionKey → ProductSelection */
     #selections = new Map();
 
     /** @type {BundleStep[]} Ordered list of child step elements */
@@ -62,6 +92,7 @@ if (!customElements.get('bundle-builder')) {
       this.#restoreOrDefault();
       this.#wireStepEvents();
       this.#syncAllSteps();
+      this.#syncAllCards();
       this.#dispatchStateChange();
     }
 
@@ -114,6 +145,14 @@ if (!customElements.get('bundle-builder')) {
 
       if (!storedState || typeof storedState !== 'object') return;
 
+      // Pre-v2 payloads keyed selections by product id alone. There is no safe way to
+      // spread one of those quantities back across the steps that now own it, so the
+      // payload is dropped rather than half-restored onto the new shape.
+      if (storedState.version !== STATE_VERSION) {
+        this.#discardStoredState();
+        return;
+      }
+
       if (storedState.activeStepIndex === null) {
         this.#activeStepIndex = null;
       } else if (
@@ -124,22 +163,40 @@ if (!customElements.get('bundle-builder')) {
         this.#activeStepIndex = storedState.activeStepIndex;
       }
 
-      if (!storedState.selections || typeof storedState.selections !== 'object') return;
+      this.#adoptSelections(storedState.selections);
+    }
 
-      for (const [productId, selection] of Object.entries(storedState.selections)) {
+    /**
+     * Copy validated selections out of a snapshot. Entries whose key is not
+     * step-scoped are skipped, so a pre-v2 payload can never land in the Map.
+     * @param {Object} selections
+     */
+    #adoptSelections(selections) {
+      if (!selections || typeof selections !== 'object') return;
+
+      for (const [selectionKey, selection] of Object.entries(selections)) {
+        if (!selectionKey.includes(SELECTION_KEY_SEPARATOR)) continue;
         if (!selection || typeof selection !== 'object') continue;
         if (!selection.quantitiesByVariant || typeof selection.quantitiesByVariant !== 'object') continue;
 
         const quantitiesByVariant = Object.fromEntries(
           Object.entries(selection.quantitiesByVariant)
             .filter(([, quantity]) => Number.isFinite(quantity) && quantity >= 0)
-            .map(([variantId, quantity]) => [variantId, Math.floor(quantity)]),
+            .map(([variantKey, quantity]) => [variantKey, Math.floor(quantity)]),
         );
         const activeVariantId = selection.activeVariantId === null || typeof selection.activeVariantId === 'string'
           ? selection.activeVariantId
           : null;
 
-        this.#selections.set(productId, { activeVariantId, quantitiesByVariant });
+        this.#selections.set(selectionKey, { activeVariantId, quantitiesByVariant });
+      }
+    }
+
+    #discardStoredState() {
+      try {
+        window.localStorage.removeItem(this.#storageKey());
+      } catch (error) {
+        console.warn('[bundle-builder] Saved state could not be discarded.', error);
       }
     }
 
@@ -196,7 +253,7 @@ if (!customElements.get('bundle-builder')) {
 
     #syncAllCards() {
       this.querySelectorAll('bundle-product-card[data-product-id]').forEach((card) => {
-        card.syncFromSelection(this.#selections.get(card.dataset.productId));
+        card.syncFromSelection(this.#selections.get(selectionKeyFor(card)));
       });
       this.#syncAllStepCounts();
     }
@@ -205,7 +262,7 @@ if (!customElements.get('bundle-builder')) {
       this.#steps.forEach((step) => {
         let selected = 0;
         step.querySelectorAll('bundle-product-card[data-product-id]').forEach((card) => {
-          const selection = this.#selections.get(card.dataset.productId);
+          const selection = this.#selections.get(selectionKeyFor(card));
           if (!selection) return;
           const total = Object.values(selection.quantitiesByVariant).reduce((sum, quantity) => sum + quantity, 0);
           if (total > 0) selected++;
@@ -218,65 +275,61 @@ if (!customElements.get('bundle-builder')) {
 
     /**
      * Called by <bundle-product-card> when a variant is selected.
-     * @param {string} productId
+     * @param {string} selectionKey
      * @param {string} variantId
      */
-    selectVariant(productId, variantId) {
-      const current = this.#selections.get(productId);
+    selectVariant(selectionKey, variantId) {
+      const current = this.#selections.get(selectionKey);
       if (!current) return;
-      this.#selections.set(productId, { ...current, activeVariantId: variantId });
+      this.#selections.set(selectionKey, { ...current, activeVariantId: variantId });
       this.#syncAllCards();
       this.#dispatchStateChange();
     }
 
     /**
-     * Increment the active variant's quantity for a product.
-     * @param {string} productId
-     * @param {string|null} variantId  Pass null for products without variants.
+     * Increment one variant's quantity within a step's selection.
+     * @param {string} selectionKey
+     * @param {string} variantKey  State key, not a Shopify variant id.
      */
-    incrementQuantity(productId, variantId = null) {
-      const current = this.#selections.get(productId);
+    incrementQuantity(selectionKey, variantKey = DEFAULT_VARIANT_KEY) {
+      const current = this.#selections.get(selectionKey);
       if (!current) return;
-      const key = variantId ?? 'default';
-      const qty = (current.quantitiesByVariant[key] ?? 0) + 1;
-      this.#selections.set(productId, {
+      const quantity = (current.quantitiesByVariant[variantKey] ?? 0) + 1;
+      this.#selections.set(selectionKey, {
         ...current,
-        quantitiesByVariant: { ...current.quantitiesByVariant, [key]: qty },
+        quantitiesByVariant: { ...current.quantitiesByVariant, [variantKey]: quantity },
       });
-      this.#updateStepCount(productId);
       this.#syncAllCards();
       this.#dispatchStateChange();
     }
 
     /**
-     * Decrement the active variant's quantity, floored at 0.
-     * @param {string} productId
-     * @param {string|null} variantId
+     * Decrement one variant's quantity within a step's selection, floored at 0.
+     * @param {string} selectionKey
+     * @param {string} variantKey  State key, not a Shopify variant id.
      */
-    decrementQuantity(productId, variantId = null) {
-      const current = this.#selections.get(productId);
+    decrementQuantity(selectionKey, variantKey = DEFAULT_VARIANT_KEY) {
+      const current = this.#selections.get(selectionKey);
       if (!current) return;
-      const key = variantId ?? 'default';
-      const current_qty = current.quantitiesByVariant[key] ?? 0;
-      if (current_qty <= 0) return;
-      this.#selections.set(productId, {
+      const quantity = current.quantitiesByVariant[variantKey] ?? 0;
+      if (quantity <= 0) return;
+      this.#selections.set(selectionKey, {
         ...current,
-        quantitiesByVariant: { ...current.quantitiesByVariant, [key]: current_qty - 1 },
+        quantitiesByVariant: { ...current.quantitiesByVariant, [variantKey]: quantity - 1 },
       });
-      this.#updateStepCount(productId);
       this.#syncAllCards();
       this.#dispatchStateChange();
     }
 
     /**
-     * Register a product's initial selection state (called by <bundle-product-card>
+     * Register a card's initial selection state (called by <bundle-product-card>
      * in Phase 2 on connectedCallback).
-     * @param {string} productId
+     * @param {string} selectionKey
      * @param {Object} selectionInit  { activeVariantId, quantitiesByVariant }
      */
-    registerProduct(productId, selectionInit) {
-      if (!this.#selections.has(productId)) {
-        this.#selections.set(productId, selectionInit);
+    registerProduct(selectionKey, selectionInit) {
+      if (!this.#selections.has(selectionKey)) {
+        this.#selections.set(selectionKey, selectionInit);
         this.#dispatchStateChange();
       }
       this.#syncAllCards();
@@ -284,12 +337,12 @@ if (!customElements.get('bundle-builder')) {
     }
 
     /**
-     * Get the current selection for a product.
-     * @param {string} productId
+     * Get the current selection for one step's product card.
+     * @param {string} selectionKey
      * @returns {Object|undefined}
      */
-    getSelection(productId) {
-      return this.#selections.get(productId);
+    getSelection(selectionKey) {
+      return this.#selections.get(selectionKey);
     }
 
     getConfig() {
@@ -312,54 +365,31 @@ if (!customElements.get('bundle-builder')) {
      */
     getState() {
       return {
+        version: STATE_VERSION,
         activeStepIndex: this.#activeStepIndex,
         selections: Object.fromEntries(this.#selections),
       };
     }
 
     /**
-     * Restore state from a previously saved snapshot.
+     * Restore state from a previously saved snapshot. Snapshots from an older
+     * state version are rejected outright rather than merged.
      * @param {Object} state
+     * @returns {boolean} Whether the snapshot was applied.
      */
     restoreState(state) {
+      if (!state || state.version !== STATE_VERSION) return false;
       if (typeof state.activeStepIndex === 'number') {
         this.#activeStepIndex = state.activeStepIndex;
       }
-      if (state.selections && typeof state.selections === 'object') {
-        for (const [id, sel] of Object.entries(state.selections)) {
-          this.#selections.set(id, sel);
-        }
-      }
+      this.#adoptSelections(state.selections);
       this.#syncAllSteps();
+      this.#syncAllCards();
       this.#dispatchStateChange();
+      return true;
     }
 
     // ── Internal helpers ───────────────────────────────────────────────────
-
-    /**
-     * After a quantity change, update the selected-count badge on the owning step.
-     * A product is "selected" if any variant has qty > 0.
-     */
-    #updateStepCount(productId) {
-      // Find which step owns this product by looking at the card's data attribute
-      const card = this.querySelector(`[data-product-id="${productId}"]`);
-      if (!card) return;
-      const stepEl = card.closest('bundle-step');
-      if (!stepEl) return;
-
-      // Count selected products in this step
-      const allCards = stepEl.querySelectorAll('bundle-product-card[data-product-id]');
-      let selected = 0;
-      allCards.forEach((c) => {
-        const pid = c.dataset.productId;
-        const sel = this.#selections.get(pid);
-        if (!sel) return;
-        const total = Object.values(sel.quantitiesByVariant).reduce((s, q) => s + q, 0);
-        if (total > 0) selected++;
-      });
-
-      stepEl.setSelectedCount(selected);
-    }
 
     /**
      * Fires a custom event so the review panel (and any other listener) can react.
@@ -378,6 +408,7 @@ if (!customElements.get('bundle-product-card')) {
     #builder = null;
     #variantSelector = null;
     #quantityStepper = null;
+    #selectionKey = '';
 
     async connectedCallback() {
       await Promise.all([
@@ -392,17 +423,18 @@ if (!customElements.get('bundle-product-card')) {
 
       if (!this.#builder) return;
 
+      this.#selectionKey = selectionKeyFor(this);
       this.#builder.addEventListener('bb:state-change', this.#onBuilderStateChange);
 
       const hasVariants = this.dataset.hasVariants === 'true';
-      this.#builder.registerProduct(this.dataset.productId, {
+      this.#builder.registerProduct(this.#selectionKey, {
         activeVariantId: hasVariants ? this.dataset.defaultVariantId : null,
-        quantitiesByVariant: hasVariants ? this.#getVariantQuantities() : { default: 0 },
+        quantitiesByVariant: hasVariants ? this.#getVariantQuantities() : { [DEFAULT_VARIANT_KEY]: 0 },
       });
 
       this.#variantSelector?.addEventListener('bb:variant-select', this.#onVariantSelect);
       this.#quantityStepper?.addEventListener('bb:quantity-change', this.#onQuantityChange);
-      this.syncFromSelection(this.#builder.getSelection(this.dataset.productId));
+      this.syncFromSelection(this.#builder.getSelection(this.#selectionKey));
     }
 
     disconnectedCallback() {
@@ -412,16 +444,16 @@ if (!customElements.get('bundle-product-card')) {
     }
 
     #onBuilderStateChange = () => {
-      this.syncFromSelection(this.#builder?.getSelection(this.dataset.productId));
+      this.syncFromSelection(this.#builder?.getSelection(this.#selectionKey));
     };
 
     syncFromSelection(selection) {
       if (!selection) return;
 
       this.#variantSelector?.syncActiveVariant(selection.activeVariantId);
-      const variantId = selection.activeVariantId ?? 'default';
-      const option = this.#variantSelector?.getOption(variantId);
-      const quantity = selection.quantitiesByVariant[variantId] ?? 0;
+      const variantKey = selection.activeVariantId ?? DEFAULT_VARIANT_KEY;
+      const option = this.#variantSelector?.getOption(variantKey);
+      const quantity = selection.quantitiesByVariant[variantKey] ?? 0;
       const totalQuantity = Object.values(selection.quantitiesByVariant).reduce((total, value) => total + value, 0);
       this.dataset.selected = String(totalQuantity > 0);
       this.#quantityStepper?.syncQuantity(quantity, option?.dataset.available !== 'false');
@@ -448,17 +480,19 @@ if (!customElements.get('bundle-product-card')) {
     }
 
     #onVariantSelect = (event) => {
-      this.#builder?.selectVariant(this.dataset.productId, event.detail.variantId);
+      this.#builder?.selectVariant(this.#selectionKey, event.detail.variantId);
     };
 
     #onQuantityChange = (event) => {
-      const variantId = this.dataset.hasVariants === 'true'
-        ? this.#builder?.getSelection(this.dataset.productId)?.activeVariantId
-        : null;
+      // The card's own stepper always targets the active variant, so the key is
+      // derived here rather than read off the event.
+      const variantKey = this.dataset.hasVariants === 'true'
+        ? (this.#builder?.getSelection(this.#selectionKey)?.activeVariantId ?? DEFAULT_VARIANT_KEY)
+        : DEFAULT_VARIANT_KEY;
       if (event.detail.action === 'increment') {
-        this.#builder?.incrementQuantity(this.dataset.productId, variantId);
+        this.#builder?.incrementQuantity(this.#selectionKey, variantKey);
       } else {
-        this.#builder?.decrementQuantity(this.dataset.productId, variantId);
+        this.#builder?.decrementQuantity(this.#selectionKey, variantKey);
       }
     };
   });
@@ -559,26 +593,29 @@ if (!customElements.get('bundle-quantity-stepper')) {
       if (this.#increaseButton) this.#increaseButton.replaceChildren(plus);
     }
 
-    #onDecrease = () => {
+    /**
+     * A stepper rendered outside a product card (the review panel) carries the
+     * state keys it targets. A card's own stepper carries neither, because the
+     * card resolves its active variant at click time.
+     * @param {'increment'|'decrement'} action
+     */
+    #dispatchQuantityChange(action) {
       this.dispatchEvent(new CustomEvent('bb:quantity-change', {
         bubbles: true,
         detail: {
-          action: 'decrement',
-          productId: this.dataset.productId,
-          variantId: this.dataset.variantId || null,
+          action,
+          selectionKey: this.dataset.selectionKey || null,
+          variantKey: this.dataset.variantKey || null,
         },
       }));
+    }
+
+    #onDecrease = () => {
+      this.#dispatchQuantityChange('decrement');
     };
 
     #onIncrease = () => {
-      this.dispatchEvent(new CustomEvent('bb:quantity-change', {
-        bubbles: true,
-        detail: {
-          action: 'increment',
-          productId: this.dataset.productId,
-          variantId: this.dataset.variantId || null,
-        },
-      }));
+      this.#dispatchQuantityChange('increment');
     };
   });
 }
@@ -708,11 +745,12 @@ if (!customElements.get('bundle-review-panel')) {
 
     #onReviewQuantityChange = (event) => {
       event.stopPropagation();
-      const { productId, variantId, action } = event.detail;
+      const { selectionKey, variantKey, action } = event.detail;
+      if (!selectionKey) return;
       if (action === 'increment') {
-        this.#builder?.incrementQuantity(productId, variantId);
+        this.#builder?.incrementQuantity(selectionKey, variantKey ?? DEFAULT_VARIANT_KEY);
       } else {
-        this.#builder?.decrementQuantity(productId, variantId);
+        this.#builder?.decrementQuantity(selectionKey, variantKey ?? DEFAULT_VARIANT_KEY);
       }
     };
 
@@ -744,6 +782,15 @@ if (!customElements.get('bundle-review-panel')) {
       const activeLines = lines.filter((line) => line.quantity > 0 && line.variantId);
       if (activeLines.length === 0) return;
 
+      // Steps hold independent selections, but the cart takes one line per variant.
+      // Merge before posting so the same variant chosen in two steps arrives as a
+      // single line of the summed quantity rather than two competing lines.
+      const quantityByVariantId = new Map();
+      for (const line of activeLines) {
+        quantityByVariantId.set(line.variantId, (quantityByVariantId.get(line.variantId) ?? 0) + line.quantity);
+      }
+      const cartLines = Array.from(quantityByVariantId, ([variantId, quantity]) => ({ id: variantId, quantity }));
+
       const originalText = checkoutBtn.textContent;
       checkoutBtn.disabled = true;
       checkoutBtn.textContent = 'Processing...';
@@ -753,23 +800,19 @@ if (!customElements.get('bundle-review-panel')) {
       try {
         if (window.Cart?.add) {
           const formData = new FormData();
-          activeLines.forEach((line, index) => {
-            formData.append(`items[${index}][id]`, line.variantId);
+          cartLines.forEach((line, index) => {
+            formData.append(`items[${index}][id]`, line.id);
             formData.append(`items[${index}][quantity]`, line.quantity);
           });
           await window.Cart.add(formData, checkoutBtn);
         } else {
-          const items = activeLines.map((line) => ({
-            id: line.variantId,
-            quantity: line.quantity,
-          }));
           const response = await fetch(`${root}cart/add.js`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             },
-            body: JSON.stringify({ items }),
+            body: JSON.stringify({ items: cartLines }),
           });
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -830,19 +873,22 @@ if (!customElements.get('bundle-review-panel')) {
     #getLines(stepElement, state) {
       const lines = [];
       stepElement.querySelectorAll('bundle-product-card[data-product-id]').forEach((card) => {
-        const selection = state.selections[card.dataset.productId];
+        const selectionKey = selectionKeyFor(card);
+        const selection = state.selections[selectionKey];
         if (!selection) return;
 
         const options = card.querySelectorAll('.bb-variant-selector__option');
         const variants = options.length ? Array.from(options) : [null];
         for (const option of variants) {
-          const key = option?.dataset.variantId ?? 'default';
-          const variantId = option?.dataset.variantId || card.dataset.defaultVariantId;
-          const quantity = selection.quantitiesByVariant[key] ?? 0;
+          const variantKey = option?.dataset.variantId ?? DEFAULT_VARIANT_KEY;
+          const quantity = selection.quantitiesByVariant[variantKey] ?? 0;
           if (quantity <= 0) continue;
           lines.push({
-            productId: card.dataset.productId,
-            variantId,
+            selectionKey,
+            variantKey,
+            // Cart identifier. A product with no variant chooser still has one, and
+            // it is never the state key — keep the two apart.
+            variantId: option?.dataset.variantId || card.dataset.defaultVariantId,
             title: card.dataset.productTitle,
             variantTitle: option?.dataset.variantTitle ?? '',
             image: option?.dataset.variantImage || card.dataset.productImage,
@@ -867,7 +913,7 @@ if (!customElements.get('bundle-review-panel')) {
         ? `<span class="bb-review__variant">${this.#escape(line.variantTitle)}</span>`
         : '';
       const quantityLabel = config.settings.quantityLabel.replace('{{ count }}', String(line.quantity));
-      return `<div class="bb-review__line"><div class="bb-review__line-main"><div class="bb-review__thumbnail">${line.image ? `<img src="${this.#escape(line.image)}" alt="" aria-hidden="true" width="41" height="41">` : ''}</div><div class="bb-review__line-copy"><span class="bb-review__line-title">${this.#escape(line.title)}</span>${variant}</div><bundle-quantity-stepper class="bb-review__stepper" data-product-id="${this.#escape(line.productId)}" data-variant-id="${this.#escape(line.variantId)}" data-quantity="${line.quantity}" data-quantity-label="${this.#escape(quantityLabel)}" data-decrease-label="${this.#escape(config.settings.decreaseQtyLabel)}" data-increase-label="${this.#escape(config.settings.increaseQtyLabel)}" data-available="true" role="group" aria-label="${this.#escape(quantityLabel)}"><button type="button" class="bb-quantity-stepper__button bb-quantity-stepper__button--decrease"><span aria-hidden="true">−</span></button><output class="bb-quantity-stepper__value" aria-live="polite">${line.quantity}</output><button type="button" class="bb-quantity-stepper__button bb-quantity-stepper__button--increase"><span aria-hidden="true">+</span></button></bundle-quantity-stepper></div><div class="bb-review__line-price">${compare}<span>${line.priceCents === 0 ? this.#escape(config.settings.freeLabel) : this.#formatMoney(line.priceCents * line.quantity, config)}</span></div></div>`;
+      return `<div class="bb-review__line"><div class="bb-review__line-main"><div class="bb-review__thumbnail">${line.image ? `<img src="${this.#escape(line.image)}" alt="" aria-hidden="true" width="41" height="41">` : ''}</div><div class="bb-review__line-copy"><span class="bb-review__line-title">${this.#escape(line.title)}</span>${variant}</div><bundle-quantity-stepper class="bb-review__stepper" data-selection-key="${this.#escape(line.selectionKey)}" data-variant-key="${this.#escape(line.variantKey)}" data-quantity="${line.quantity}" data-quantity-label="${this.#escape(quantityLabel)}" data-decrease-label="${this.#escape(config.settings.decreaseQtyLabel)}" data-increase-label="${this.#escape(config.settings.increaseQtyLabel)}" data-available="true" role="group" aria-label="${this.#escape(quantityLabel)}"><button type="button" class="bb-quantity-stepper__button bb-quantity-stepper__button--decrease"><span aria-hidden="true">−</span></button><output class="bb-quantity-stepper__value" aria-live="polite">${line.quantity}</output><button type="button" class="bb-quantity-stepper__button bb-quantity-stepper__button--increase"><span aria-hidden="true">+</span></button></bundle-quantity-stepper></div><div class="bb-review__line-price">${compare}<span>${line.priceCents === 0 ? this.#escape(config.settings.freeLabel) : this.#formatMoney(line.priceCents * line.quantity, config)}</span></div></div>`;
     }
 
     #renderShipping(config) {
@@ -879,7 +925,7 @@ if (!customElements.get('bundle-review-panel')) {
       const financing = financingTemplate.replace(/\{\{?\s*price\s*\}?\}/, this.#formatMoney(monthly, config));
       const savingsText = config.settings.savingsTemplate.replace('{{ amount }}', this.#formatMoney(savings, config));
       const guarantee = this.#builder.dataset.guaranteeText;
-      return `<section class="bb-review__summary"><div class="bb-review__guarantee"><img class="bb-review__guarantee-badge" src="${this.#escape(config.settings.guaranteeBadgeUrl)}" alt="${this.#escape(guarantee)}" width="78" height="78"><span>${this.#escape(guarantee)}</span></div><div class="bb-review__summary-row"><span class="bb-review__financing">${this.#escape(financing)}</span><div class="bb-review__totals">${totals.originalSubtotal > totals.subtotal ? `<s class="bb-review__compare-price">${this.#formatMoney(totals.originalSubtotal, config)}</s>` : ''}<strong>${this.#formatMoney(totals.subtotal, config)}</strong></div></div><p class="bb-review__savings">${this.#escape(savingsText)}</p><button type="button" class="bb-review__checkout">${this.#escape(this.#builder.dataset.checkoutLabel)}</button><a class="bb-review__save" href="#">${this.#escape(this.#builder.dataset.saveLabel)}</a><span class="bb-review__save-status" aria-live="polite"></span></section>`;
+      return `<section class="bb-review__summary"><div class="bb-review__summary-row"><img class="bb-review__guarantee-badge" src="${this.#escape(config.settings.guaranteeBadgeUrl)}" alt="${this.#escape(guarantee)}" width="78" height="78"><div class="bb-review__summary-pricing"><span class="bb-review__financing">${this.#escape(financing)}</span><div class="bb-review__totals">${totals.originalSubtotal > totals.subtotal ? `<s class="bb-review__compare-price">${this.#formatMoney(totals.originalSubtotal, config)}</s>` : ''}<strong>${this.#formatMoney(totals.subtotal, config)}</strong></div></div></div><div class="bb-review__summary-actions"><p class="bb-review__savings">${this.#escape(savingsText)}</p><button type="button" class="bb-review__checkout">${this.#escape(this.#builder.dataset.checkoutLabel)}</button></div><a class="bb-review__save" href="#">${this.#escape(this.#builder.dataset.saveLabel)}</a><span class="bb-review__save-status" aria-live="polite"></span></section>`;
     }
 
     #formatMoney(cents, config) {

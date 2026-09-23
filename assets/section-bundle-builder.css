@@ -28,6 +28,10 @@
   --bb-accent: 78 47 210;       /* #4E2FD2 purple */
   --bb-success: 10 162 136;     /* #0AA288 */
   --bb-danger: 216 57 43;       /* #D8392B strike price */
+  --bb-price: 87 87 87;         /* #575757 card price (Figma 68:9820) */
+  --bb-chip-line: 204 204 204;  /* #CCCCCC chip border (Figma 68:9805) */
+  --bb-chip-active: 29 240 187; /* #1DF0BB chip wash (Figma 68:9802) */
+  --bb-surface-alt: 241 241 242; /* #F1F1F2 disabled stepper (Figma 74:21684) */
 
   /* Resolved shorthand tokens used throughout */
   --bb-c-ink: rgb(var(--bb-ink));
@@ -42,6 +46,9 @@
   --bb-c-accent: rgb(var(--bb-accent));
   --bb-c-success: rgb(var(--bb-success));
   --bb-c-danger: rgb(var(--bb-danger));
+  --bb-c-price: rgb(var(--bb-price));
+  --bb-c-chip-line: rgb(var(--bb-chip-line));
+  --bb-c-surface-alt: rgb(var(--bb-surface-alt));
 
   color: var(--bb-c-ink);
   background-color: var(--bb-c-panel);
@@ -77,8 +84,8 @@
     grid-template-columns: minmax(0, 1fr) 399px;
     grid-template-areas: "steps review";
     align-items: start;
-    padding-inline: 32px;
-    gap: 40px;
+    padding-inline: 42px;
+    gap: 29px;
   }
 }
 
@@ -88,7 +95,7 @@
   margin-inline: -16px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 13px;
 }
 
 @media screen and (min-width: 768px) {
@@ -138,6 +145,7 @@ bundle-step.bb-step {
   padding-inline: 15px;
   font-size: 10px;
   font-weight: 500;
+  line-height: 1;
   letter-spacing: 1.6px;
   text-transform: uppercase;
   color: #484848;
@@ -156,7 +164,7 @@ bundle-step.bb-step {
    ───────────────────────────────────────────────────────────────────────────── */
 
 .bb-step--open {
-  gap: 0;
+  gap: 5px;
   padding-top: 15px;
 }
 
@@ -224,7 +232,7 @@ bundle-step.bb-step {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1;
   color: var(--bb-c-ink);
 }
 
@@ -255,10 +263,6 @@ bundle-step.bb-step {
   .bb-step:not(.bb-step--open) .bb-step__count {
     display: none;
   }
-
-  .bb-step:not(.bb-step--open) .bb-step__header-right {
-    color: var(--bb-c-ink);
-  }
 }
 
 /* Chevron — points UP (open), flips DOWN (closed) via CSS transform */
@@ -281,12 +285,17 @@ bundle-step.bb-step {
    6. Step content panel
    ───────────────────────────────────────────────────────────────────────────── */
 
+/*
+ * The open step is one bordered block in the design (Figma 68:9777): a single
+ * 0.5px rule above the header, then header, grid and button separated by a
+ * 15px gap. The border lives on .bb-step__header-wrap, so the content panel
+ * carries none. A second one here drew a rule the design does not have.
+ */
 .bb-step__content {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  padding: 20px 15px;
-  border-top: 0.5px solid var(--bb-c-graphite);
+  padding: 15px 15px 20px;
 }
 
 /* hidden attribute hides the content panel; JS removes it on open */
@@ -320,7 +329,7 @@ bundle-step.bb-step {
 }
 
 .bb-product-card[data-selected="true"] .bb-product-card__article {
-  border-color: rgb(var(--bb-success) / 0.7);
+  border-color: rgb(var(--bb-accent) / 0.7);
 }
 
 .bb-product-card__media {
@@ -378,14 +387,14 @@ bundle-step.bb-step {
   font-size: 18px;
   font-weight: 600;
   line-height: 1;
-  letter-spacing: -0.1px;
+  letter-spacing: 0.6px;
 }
 
 .bb-product-card__description {
   font-size: 14px;
   font-weight: 500;
   line-height: 1.3;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.6px;
   opacity: 0.75;
 }
 
@@ -397,22 +406,24 @@ bundle-step.bb-step {
 
 .bb-variant-selector__option {
   display: inline-flex;
+  min-width: 65px;
   height: 26px;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding-inline: 4px;
+  padding-inline: 5px;
   color: var(--bb-c-graphite);
   background-color: var(--bb-c-panel);
-  border: 0.5px solid var(--bb-c-line);
+  border: 0.5px solid var(--bb-c-chip-line);
   border-radius: 2px;
   cursor: pointer;
   font-size: 10px;
   font-weight: 500;
+  letter-spacing: 0.6px;
 }
 
 .bb-variant-selector__option[aria-pressed="true"] {
-  background-color: rgb(var(--bb-success) / 0.06);
+  background-color: rgb(var(--bb-chip-active) / 0.04);
   border-color: var(--bb-c-success);
 }
 
@@ -422,8 +433,8 @@ bundle-step.bb-step {
 }
 
 .bb-variant-selector__image {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
   border-radius: 5px;
   object-fit: contain;
@@ -499,6 +510,7 @@ bundle-step.bb-step {
   color: var(--bb-c-graphite);
   font-size: 16px;
   line-height: 1;
+  letter-spacing: 0.6px;
 }
 
 .bb-product-card__compare-price {
@@ -506,7 +518,7 @@ bundle-step.bb-step {
 }
 
 .bb-product-card__current-price {
-  color: var(--bb-c-muted);
+  color: var(--bb-c-price);
 }
 
 .bb-variant-selector__option:focus-visible,
@@ -522,7 +534,7 @@ bundle-step.bb-step {
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    gap: 15px;
+    gap: 13px;
     padding: 11px;
   }
 
@@ -546,6 +558,16 @@ bundle-step.bb-step {
   .bb-step__products {
     grid-template-columns: 1fr 1fr;
   }
+
+  /*
+   * An odd final card keeps one column's width and centres, rather than
+   * stretching across the row (Figma 119:1716).
+   */
+  .bb-step__products > .bb-product-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    width: calc((100% - 15px) / 2);
+    justify-self: center;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -567,6 +589,7 @@ bundle-step.bb-step {
   padding-block: 5px;
   font-size: 18px;
   font-weight: 600;
+  line-height: 24px;
   color: var(--bb-c-accent);
   background: none;
   border: 1px solid var(--bb-c-accent);
@@ -585,11 +608,13 @@ bundle-step.bb-step {
    ───────────────────────────────────────────────────────────────────────────── */
 
 bundle-review-panel.bb-review {
-  display: block;
+  display: flex;
 }
 
 .bb-review {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   background-color: var(--bb-c-panel-alt);
   padding-top: 15px;
 }
@@ -600,11 +625,13 @@ bundle-review-panel.bb-review {
   }
 }
 
+
 .bb-review__eyebrow {
   margin: 0;
   padding-inline: 15px;
   font-size: 12px;
   font-weight: 500;
+  line-height: 1;
   letter-spacing: 1.6px;
   text-transform: uppercase;
   color: #484848;
@@ -648,11 +675,21 @@ bundle-review-panel.bb-review {
 }
 
 .bb-review__group,
-.bb-review__shipping,
 .bb-review__summary {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  border-top: 1px solid var(--bb-c-line);
+  padding-top: 15px;
+}
+
+/*
+ * Shipping is a single row (Figma 74:21725): icon and label left, price
+ * right. It takes its border and spacing here but its flex direction from
+ * the shared row rule below. Grouping it with the column block above left
+ * flex-direction: column in force and stacked the price under the label.
+ */
+.bb-review__shipping {
   border-top: 1px solid var(--bb-c-line);
   padding-top: 15px;
 }
@@ -662,6 +699,7 @@ bundle-review-panel.bb-review {
   color: var(--bb-c-subtle);
   font-size: 12px;
   font-weight: 400;
+  line-height: 16px;
   letter-spacing: 0.36px;
   text-transform: uppercase;
 }
@@ -755,6 +793,19 @@ bundle-review-panel.bb-review {
 .bb-review__stepper .bb-quantity-stepper__button {
   width: 20px;
   height: 20px;
+  background-color: var(--bb-c-panel);
+  border-color: transparent;
+}
+
+.bb-review__stepper .bb-quantity-stepper__button:disabled {
+  background-color: var(--bb-c-surface-alt);
+  border-color: var(--bb-c-line);
+}
+
+.bb-review__stepper .bb-quantity-stepper__value {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 16px;
 }
 
 .bb-review__line-price {
@@ -762,7 +813,6 @@ bundle-review-panel.bb-review {
   flex-shrink: 0;
   flex-direction: column;
   align-items: flex-end;
-  gap: 3px;
   color: var(--bb-c-accent);
   font-size: 14px;
   font-weight: 600;
@@ -779,14 +829,22 @@ bundle-review-panel.bb-review {
   gap: 8px;
 }
 
-.bb-review__guarantee {
+/*
+ * The badge shares a row with the financing pill and the totals, which
+ * stack to its right (Figma 74:21740 / 74:21742).
+ */
+.bb-review__summary-pricing {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--bb-c-graphite);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.25;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.bb-review__summary-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 10px;
 }
 
 .bb-review__guarantee-badge {
@@ -798,7 +856,7 @@ bundle-review-panel.bb-review {
 }
 
 .bb-review__financing {
-  padding: 6px 8px;
+  padding: 5px 8px;
   color: var(--bb-c-panel);
   background-color: var(--bb-c-accent);
   border-radius: 3px;
@@ -811,6 +869,11 @@ bundle-review-panel.bb-review {
   align-items: baseline;
   gap: 8px;
   white-space: nowrap;
+}
+
+.bb-review__totals .bb-review__compare-price {
+  font-size: 18px;
+  line-height: 20px;
 }
 
 .bb-review__totals strong {
@@ -877,4 +940,17 @@ bundle-review-panel.bb-review {
 .bb-review__save:focus-visible {
   outline: 2px solid var(--bb-c-accent);
   outline-offset: 2px;
+}
+
+/*
+ * At desktop the panel is 399 wide but its content frame is 390 and sits
+ * flush left (Figma 74:21629 inside 74:21626), leaving 20px of inset on the
+ * left and 29px on the right. This looks like a by-product of the designer
+ * reusing the 390 mobile frame; it is reproduced here because the frame is
+ * the reference. Revert to a symmetric 20px if that turns out unintended.
+ */
+@media screen and (min-width: 1280px) {
+  .bb-review__body {
+    padding-inline-end: 29px;
+  }
 }

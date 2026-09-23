@@ -37,6 +37,7 @@
         "announcement-1",
         "announcement-2"
       ],
+      "disabled": true,
       "settings": {
         "show_announcement": true,
         "background_color": "#000000",
@@ -46,6 +47,7 @@
     },
     "header": {
       "type": "header",
+      "disabled": true,
       "settings": {
         "logo_position": "middle-left",
         "menu_position": "center",
