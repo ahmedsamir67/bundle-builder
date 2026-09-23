@@ -273,12 +273,11 @@
       "name": "Shop The Look",
       "settings": {
         "color_scheme": "",
+        "padding_top": 36,
+        "padding_bottom": 36,
         "heading": "Shop The Look",
         "view_all_url": "",
-        "show_vendor": false,
-        "image_ratio": "adapt",
-        "padding_top": 36,
-        "padding_bottom": 36
+        "show_vendor": false
       }
     },
     "relative_products_nWjQjY": {

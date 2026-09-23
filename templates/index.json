@@ -179,12 +179,76 @@
         "title": "Product Highlights Title",
         "description": "Product Highlights description will appear here."
       }
+    },
+    "section_bundle_builder_kbDKkz": {
+      "type": "section-bundle-builder",
+      "blocks": {
+        "step_FAaBE7": {
+          "type": "step",
+          "settings": {
+            "heading": "Choose your camera",
+            "review_subheading": "Cameras",
+            "collection": "",
+            "open_by_default": true,
+            "next_button_label": "Next: Sensors"
+          }
+        },
+        "step_MicDKW": {
+          "type": "step",
+          "settings": {
+            "heading": "Add sensors",
+            "review_subheading": "Sensors",
+            "collection": "",
+            "open_by_default": false,
+            "next_button_label": "Next: Accessories"
+          }
+        },
+        "step_VWeCCe": {
+          "type": "step",
+          "settings": {
+            "heading": "Accessories",
+            "review_subheading": "Accessories",
+            "collection": "",
+            "open_by_default": false,
+            "next_button_label": "Next: Plan"
+          }
+        },
+        "step_86VnMJ": {
+          "type": "step",
+          "settings": {
+            "heading": "Choose a plan",
+            "review_subheading": "Plan",
+            "collection": "",
+            "open_by_default": false,
+            "next_button_label": "Review your system"
+          }
+        }
+      },
+      "block_order": [
+        "step_FAaBE7",
+        "step_MicDKW",
+        "step_VWeCCe",
+        "step_86VnMJ"
+      ],
+      "name": "t:sections.bundle_builder.name",
+      "settings": {
+        "review_title": "Your security system",
+        "review_subtitle": "Review your personalized protection system designed to keep what matters most safe.",
+        "checkout_label": "Checkout",
+        "save_label": "Save my system for later",
+        "guarantee_text": "30-day hassle-free returns",
+        "financing_text": "as low as {price}/mo",
+        "color_scheme": "",
+        "padding_top": 0,
+        "padding_bottom": 0
+      }
     }
   },
   "order": [
     "hero_1",
     "featured_collections_hhETJ9",
     "selling_points_v2_6NgzaK",
-    "product_highlights_gUaG6E"
+    "product_highlights_gUaG6E",
+    "section_bundle_builder_kbDKkz"
   ]
 }
