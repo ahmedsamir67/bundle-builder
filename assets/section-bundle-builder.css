@@ -129,10 +129,13 @@
    header text flush left.
    ───────────────────────────────────────────────────────────────────────────── */
 
-bundle-step.bb-step {
-  display: block;
-}
-
+/*
+ * <bundle-step> is a custom element, so it needs an explicit display or it
+ * would default to inline. That display belongs here on the class, not on a
+ * `bundle-step.bb-step` selector: element+class outranks class, so such a
+ * rule silently beat this one and left the step as display:block, which in
+ * turn made `gap` inert and collapsed the space under the step label.
+ */
 .bb-step {
   display: flex;
   flex-direction: column;
@@ -606,10 +609,6 @@ bundle-step.bb-step {
 /* ─────────────────────────────────────────────────────────────────────────────
    8. Review panel shell (Phase 3 will complete the interior)
    ───────────────────────────────────────────────────────────────────────────── */
-
-bundle-review-panel.bb-review {
-  display: flex;
-}
 
 .bb-review {
   display: flex;
